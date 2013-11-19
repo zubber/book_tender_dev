@@ -1,0 +1,49 @@
+#! /bin/sh
+###
+# chkconfig: 35 99 55
+# description: Manages queue manager for tender progect
+###
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+
+EXEC=/var/www/tender/protected/extensions/queuemanager/queue_manager.php
+PIDFILE=/var/run/queue_manager/queue_manager.pid
+
+start()
+{
+        echo -n "Starting tender queue manager"
+        #To run it as root:
+#        ${EXEC}
+	daemon --pidfile=${PIDFILE} ${EXEC}
+        echo
+}
+
+stop()
+{
+        echo -n "Stopping tender queue manager"
+        #To run it as root:
+        PID=`cat ${PIDFILE}`
+        #kill ${PID}
+        killproc -p ${PIDFILE} ${EXEC}
+        echo
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+	stop
+        ;;
+ restart)
+	stop
+	start
+	;;
+  *)
+        echo "Usage: service queue_manager {start|stop}"
+        exit 1
+esac
+
+exit 0
