@@ -50,6 +50,7 @@ class GenExcelCommand extends CConsoleCommand
 				
 				if ( !isset($fp['col']) || !isset($row[$fn])) continue;
 				$cell = $fp['col'].$row['row_num'];
+				if ( trim( $objPHPExcel->getSheet()->getCell($cell)->getValue() ) ) continue; //Не изменяем ячейку, если там было значение 
 				$objPHPExcel->getSheet()->setCellValue($cell, $row[$fn]);
 				switch ( $fp['type'] )
 				{

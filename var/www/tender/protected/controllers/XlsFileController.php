@@ -167,7 +167,8 @@ class XlsFileController extends Controller
 
 	public function actionAjaxUpdateStat()
 	{
-		$id = Yii::app()->request->getQuery('xls_file');
+		$id = (int)Yii::app()->request->getQuery('xls_file'); //dd(XlsFile::model());
+		if( !($id > 0)) exit( print( json_encode( array('errorText' => 'xls_file is not number' ))));
 		$owner_id = XlsFile::model()->findByPk($id)->user_id;
 		$this->checkAuthorized($owner_id,array('js'=>true));
 		$statData = XlsFile::model()->getStat($id);

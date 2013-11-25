@@ -6,7 +6,7 @@
 	<meta name="language" content="en" />
 
     <link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->theme->baseUrl; ?>/css/styles.css" />
-	<script type="text/javascript" src="/assets/js/tender.js"></script>
+	<script type="text/javascript" src="/js/tender.js"></script>
     
 	<title><?php echo CHtml::encode($this->pageTitle); ?></title>
 
@@ -46,12 +46,6 @@
 <div class="container" id="page">
 <?php 
 
-/* 	<?php if(isset($this->breadcrumbs)):?>
-		<?php $this->widget('bootstrap.widgets.TbBreadcrumbs', array(
-			'links'=>$this->breadcrumbs,
-		)); ?><!-- breadcrumbs -->
-	<?php endif?>
-*/
 ?>
 	<?php echo $content; ?>
 

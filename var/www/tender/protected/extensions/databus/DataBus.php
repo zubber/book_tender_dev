@@ -31,7 +31,6 @@
 				$this->_rh = false;
 				return false;
 			}
-			
 			$mdb_conn = new MongoClient( $this->_config['params']['mongo'] );
 			$this->_mdb = $mdb_conn->tender;
 		}

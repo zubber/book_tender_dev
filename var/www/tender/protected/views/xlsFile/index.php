@@ -28,7 +28,7 @@ $this->menu=array(
 	        		'name'=>'orig_name', 
 	        		'header'=>'Название',
 	        		'type'=>'raw',
-	        		'value' => '"<a href=\'/tender/index.php?r=xlsFile/view&id=". $data->id . "\'>$data->orig_name</a>"'
+	        		'value' => '"<a href=\'/index.php?r=xlsFile/view&id=". $data->id . "\'>$data->orig_name</a>"'
 			),
     		array(
     				'name'  => 'status',

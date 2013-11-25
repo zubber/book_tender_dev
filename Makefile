@@ -12,6 +12,7 @@ upd_services:
 upd_www:
 	cp -rf ${CUR_DIR}/var/www/yii /var/www/yii
 dirs:
+	ln -s ${CUR_DIR}/var/www/tender /var/www/tender
 	mkdir /var/www/files
 	mkdir /var/www/files/1.uploaded  
 	mkdir /var/www/files/2.processing  

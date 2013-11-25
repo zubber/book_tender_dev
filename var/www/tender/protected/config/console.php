@@ -15,7 +15,7 @@ return array(
 			'connectionString' => 'mysql:host=localhost;dbname=tender',
 			'emulatePrepare' => true,
 			'username' => 'www',
-			'password' => '12345678',
+			'password' => '',
 			'charset' => 'utf8',
 		),
 		'log'=>array(
