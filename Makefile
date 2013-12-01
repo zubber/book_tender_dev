@@ -9,7 +9,8 @@ fdir = /var/www/files
 
 upd_services:
 	cp -rf ${CUR_DIR}/etc/* /etc/
-	
+	cp -rf ${CUR_DIR}/var/lib/* /var/lib/
+
 upd_www:
 	cp -rf ${CUR_DIR}/var/www/yii /var/www/yii
 dirs:
