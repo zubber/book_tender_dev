@@ -1,23 +1,28 @@
-update: upd_services upd_www restart dirs
+update: dirs upd_services upd_www restart
 
 CUR_DIR = $(shell pwd)
 WHOAMI = $(shell logname) 
 CUR_DATE = $(shell date +%Y%m%d_%H%M%S)
+#directories
+TDIR = /var/www/tender
+fdir = /var/www/files
 
 upd_services:
-#	rsync -pr $(CUR_DIR)/etc/* /etc
-	cp -f $(CUR_DIR)/etc/rc.d/init.d/*manager /etc/rc.d/init.d/
-
+	cp -rf ${CUR_DIR}/etc/* /etc/
 	
 upd_www:
 	cp -rf ${CUR_DIR}/var/www/yii /var/www/yii
 dirs:
-	ln -s ${CUR_DIR}/var/www/tender /var/www/tender
-	mkdir /var/www/files
-	mkdir /var/www/files/1.uploaded  
-	mkdir /var/www/files/2.processing  
-	mkdir /var/www/files/3.done
-	chmod -R 777 /var/www/files
+	if [ ! -d ${TDIR} ]; then ln -s ${CUR_DIR}/var/www/tender ${TDIR}; fi
+	if [ ! -d ${FDIR} ]; then create_fdir; fi
+	
 restart:
 	service queue_manager restart
 	service stat_manager restart
+	
+create_fdir:
+	    mkdir ${FDIR}
+	    mkdir ${FDIR}/1.uploaded  
+	    mkdir ${FDIR}/2.processing  
+	    mkdir ${FDIR}/3.done
+	    chmod -R 777 ${FDIR}
