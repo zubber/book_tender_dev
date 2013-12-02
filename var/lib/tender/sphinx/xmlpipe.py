@@ -11,14 +11,13 @@ from pymongo import MongoClient
 
 
 
-MONGO_HOST = "192.168.1.101"
+MONGO_HOST = "127.0.0.1"
 
 connection = MongoClient(MONGO_HOST, 27017)
 db = connection.tender
 books_col = db.books_catalog
 
-query = {"xml_id" : "ec09148c-c63f-4431-95e0-f539eb68f4d8" }
-#query = {}
+query = {}
 books_cursor = books_col.find(query)
 
 root = ET.Element("sphinx:docset")

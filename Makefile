@@ -8,6 +8,7 @@ TDIR = /var/www/tender
 FDIR = /var/www/files
 RTDIR = /var/www/tender/protected/runtime
 ASDIR = /var/www/tender/assets
+SPHDIR = /var/sphinx
 upd_services:
 	cp -rf ${CUR_DIR}/etc/* /etc/
 	cp -rf ${CUR_DIR}/var/lib/* /var/lib/
@@ -19,11 +20,14 @@ dirs:
 	if [ ! -d ${FDIR} ]; then create_fdir; fi
 	if [ ! -d ${RTDIR} ]; then mkdir ${RTDIR}; chmod 777 ${RTDIR}; fi
 	if [ ! -d ${ASDIR} ]; then mkdir ${ASDIR}; chmod 777 ${ASDIR}; fi
-	
+
 restart:
 	service queue_manager restart
 	service stat_manager restart
 	
+sphinx:
+	if [ ! -d ${SPHDIR} ]; then mkdir ${SPHDIR}; chown sphinx:sphinx ${SPHDIR}; fi	
+	indexer --config /etc/sphinx/sphinx.conf --all
 create_fdir:
 	mkdir ${FDIR}
 	mkdir ${FDIR}/1.uploaded  
