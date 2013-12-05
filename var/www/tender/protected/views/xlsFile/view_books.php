@@ -48,7 +48,7 @@ if ( $model['status'] == 1 )
 		'summaryText'=>'',
 	    'columns'=>array(
 	        array('name'=>'id', 'header'=>'№'),
-	    	array('name'=>'original_name', 'header'=>'Входю назв.'),
+	    	array('name'=>'original_name', 'header'=>'Вход. назв.'),
 	    	array('name'=>'original_author', 'header'=>'Вход. автор'),
 	    	array('name'=>'name', 'header'=>'Найденное назв.'),
 // 	    	array(
