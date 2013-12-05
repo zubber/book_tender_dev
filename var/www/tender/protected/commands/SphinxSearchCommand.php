@@ -9,6 +9,11 @@ define( "RET_ERR_DAY_LIMIT", 3 );
 define( "SPH_QUERY_NAME_AUTHOR", 1 );
 define( "SPH_QUERY_NAME", 2 );
 
+define( "SEARCH_QUALITY_EXCELLENT", 2 );
+define( "SEARCH_QUALITY_GOOD", 1 );
+define( "SEARCH_QUALITY_POOR", 0 );
+define( "SEARCH_QUALITY_NOT_FOUND", 0 );
+
 class SphinxSearchCommand extends CConsoleCommand
 {
 	private $_bookKeys 			= array( 'authors', 'publishedDate', 'publisher', 'industryIdentifiers', 'pageCount', 'printType', 'title', 'canonicalVolumeLink');
@@ -132,11 +137,7 @@ class SphinxSearchCommand extends CConsoleCommand
 				{
 					if ( !isset( $this->_matches[$_seq_id] ) || $book['weight'] > $this->_matches[$_seq_id]['weight'] )
 						$this->_matches[$_seq_id] = array_merge( $book, array('_q' => $this->_sv['q']) );
-					
 				}
-// 				if ( $this->_sv['s'] < 6 ) {
-// 					break;
-// 				}
 			}
 			$index++;
 		} while( $index < $max );
@@ -157,7 +158,6 @@ class SphinxSearchCommand extends CConsoleCommand
 				$json_errors[$value] = $name;
 			}
 		}
-
 		
 		$le = json_last_error();
 		if ( $le )
@@ -166,10 +166,13 @@ class SphinxSearchCommand extends CConsoleCommand
 			return RET_ERR_JSON_ENCODE;
 		}
 		
-		
 		$book_id = $arg_data['b'];
+		if ( $arg_data['n'] == $arg_data['a'] )
+			$authors = '';
+		else
+			$authors = $this->preparePhrase($arg_data['a']);
 		$book_name = $this->preparePhrase($arg_data['n']);
-		$authors = $this->preparePhrase($arg_data['a']);
+		
 		$wc = count(preg_split( "/[\s.,;]+/", $arg_data['n'] ));		#var_dump($wc); die;
 		
 		$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
@@ -180,46 +183,61 @@ class SphinxSearchCommand extends CConsoleCommand
 		$m_cur = $mdb_bc->find($query);
 		$is_authors_found = false;
 		$m_book = false;
+		$matches = array();
+		
+		//пробуем точное совпадение
+		$exact_query = array('name' => trim($book_name));
+		if ( $authors ) $exact_query['price_authors'] = $authors;
+		$m_book = $mdb_bc->findOne($exact_query);		
 
-		$matches = array();		
 		if ( $m_book )
 		{
+			$matches = array(array(
+					"_seq_id" => $m_book['_seq_id'],
+					"percentage" => 1,
+					"weight" => 10,
+			));
 			$data = array(
 					"search_results" => array (
-							"matches" 	=> array(array(
-									"_seq_id" => $m_book['_seq_id'],
-									"percentage" => 1,
-									"weight" => 10,
-							)),
+							"matches" 	=> $matches,
 							"best_percentage" => 1,
 							"count"		=> 1
 					)
 			);
 			array_push( $seq_ids, (int)$m_book['_seq_id'] );
-			$found_flag = 2;
+			array_push( $matches, array_merge( array( "_seq_id" => (int)$m_book['_seq_id'], "percentage" => 1), $docinfo ) );
+			$found_flag = SEARCH_QUALITY_EXCELLENT;
 			$status = 11;
 		}
 		else {
 			$status = 10;
-			$found_flag = 0;
-			
+			$mdb_bc = $mdb_conn->tender->books_catalog;
+				
+			$found_flag = SEARCH_QUALITY_NOT_FOUND;
 			if ( $this->makeSphinxQueries($book_name, $authors) ) {
 				#{Sphinx Weight} / {Number of Words in Search Query} / {Number of Fields in Sphinx			Database} / 12
-				foreach ( $this->_matches as $doc => $docinfo )
+				foreach ( $this->_matches as $seq_id => $docinfo )
 				{
+					//контрольная проверка - есть ли найденное название в запросе
+					$query = array( "_seq_id" => $seq_id );
+					$projection = array( "name" => true );
+					$m_book = $mdb_bc->findOne($query, $projection);
+					if ( strpos($arg_data['n'], $m_book['name']) === false ) continue;
+					
+					//ок, книга подходит
 					$percentage = round( $docinfo['weight'] / $this->_sv['wc'] / 2 / 128, 2 );
  					if ( $percentage > 1 ) $percentage = 1;
 					if ( $percentage >= 0.9 )
-						$found_flag = 1; //Точное совпадение
+						$found_flag = SEARCH_QUALITY_EXCELLENT; //Точное совпадение
 					elseif ( $percentage >=  0.1 )
-						$found_flag = 2; //Не точное совпадение
+						$found_flag = SEARCH_QUALITY_GOOD; //Не точное совпадение
 					else { //Плохое совпадение, выходим
 						$data = array( "search_results"	=> array( "count" => 0 ) );
 						break;
 					}
 						
- 					array_push( $matches, array_merge( array( "_seq_id" => (int)$doc, "percentage" => $percentage), $docinfo ) );
- 					array_push( $seq_ids, (int)$doc );
+ 					array_push( $matches, array_merge( array( "_seq_id" => (int)$seq_id, "percentage" => $percentage), $docinfo ) );
+ 					array_push( $seq_ids, (int)$seq_id );
 				}
 				
 				if ( count( $matches ))
@@ -237,9 +255,11 @@ class SphinxSearchCommand extends CConsoleCommand
 					$status = 11;
 				}
 			}
-			else			
-				$data = array( "search_results"	=> array( "count" => 0 ) );
+
 		}
+		
+		if ( !count( $matches ) )
+			$data = array( "search_results"	=> array( "count" => 0 ) );
 		
 		
 
@@ -274,7 +294,6 @@ class SphinxSearchCommand extends CConsoleCommand
 
 function sort_by_weight($a, $b)
 {
-// 	print $a['weight'] .'=='. $b['weight']."\r\n";
 	if ($a['weight'] == $b['weight']) {
 		return 0;
 	}
