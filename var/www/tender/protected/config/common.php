@@ -5,7 +5,7 @@ require_once dirname(__FILE__).DIRECTORY_SEPARATOR.'../extensions/Kint/Kint.php'
 $commonParams = array(
 		// this is used in contact page
 		'adminEmail'=>'zubran@gmail.com',
-		'mongo' => 'mongodb://localhost:27017',
+		'mongo' => 'mongodb://127.0.0.1:27017',
 		'databus' => array (
 			'redis' => array( 'host' => 'localhost', 'port' => 6379 ),
 		),
