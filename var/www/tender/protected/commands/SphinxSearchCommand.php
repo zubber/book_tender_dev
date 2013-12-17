@@ -24,6 +24,9 @@ class SphinxSearchCommand extends CConsoleCommand
 	private $_sv = false;
 	private $_matches = array();	
 	private $is_debug = 0;
+	private $current_book = false;
+	private $current_author = false;
+	private $book_id = false;
 	
 	function __construct()
 	{
@@ -46,7 +49,7 @@ class SphinxSearchCommand extends CConsoleCommand
 		//Наша цель - оставить только фамилии и попытаться найти по ним в монго. Удалим одинокие буквы ( это сокращенные имя и отчество ).
 // 		$str_out = preg_replace( '/[.,]/', ' ', $str );
 		$str_out = str_replace( array( '.',',' ), ' ', $str );
-// 		$str_out = preg_replace( '/\s([А-Я]{1})/', '', $str_out ); //Попытка убрать отчества. Однако есть например два Гумилева, Николай и Лев.
+		$str_out = mb_ereg_replace( '\s([А-Я]{1})', '', $str_out ); //Попытка убрать отчества. Однако есть например два Гумилева, Николай и Лев.
 		return trim($str_out);
 	}
 	
@@ -59,6 +62,8 @@ class SphinxSearchCommand extends CConsoleCommand
 		if ( $sAuthors )
 		{
 			$aA=preg_split('/[\s,-]+/', $sAuthors );
+			$this->log('Authors to search in sphinx: ' . implode( '|', $aA ) );
+			
 			$wc += count($aA);
 		}
 		$aKeywords = array_merge($aT,$aA);
@@ -172,6 +177,10 @@ class SphinxSearchCommand extends CConsoleCommand
 		else
 			$authors = $this->preparePhrase($arg_data['a']);
 		$book_name = $this->preparePhrase($arg_data['n']);
+		$this->current_book = $book_name; //делается для журналирования
+		$this->current_author = $authors;
+		$this->book_id = $arg_data['b'];
+		$this->log( 'Begin book ' . $book_name . ". Author:" . $authors);
 		
 		$wc = count(preg_split( "/[\s.,;]+/", $arg_data['n'] ));		#var_dump($wc); die;
 		
@@ -181,7 +190,6 @@ class SphinxSearchCommand extends CConsoleCommand
 		$query = array( "name" => $book_name ); //TODO: поиск по автору
  
 		$m_cur = $mdb_bc->find($query);
-		$is_authors_found = false;
 		$m_book = false;
 		$matches = array();
 		
@@ -205,7 +213,7 @@ class SphinxSearchCommand extends CConsoleCommand
 					)
 			);
 			array_push( $seq_ids, (int)$m_book['_seq_id'] );
-			array_push( $matches, array_merge( array( "_seq_id" => (int)$m_book['_seq_id'], "percentage" => 1), $docinfo ) );
+			array_push( $matches, array_merge( array( "_seq_id" => (int)$m_book['_seq_id'], "percentage" => 1) ) );
 			$found_flag = SEARCH_QUALITY_EXCELLENT;
 			$status = 11;
 		}
@@ -215,21 +223,40 @@ class SphinxSearchCommand extends CConsoleCommand
 				
 			$found_flag = SEARCH_QUALITY_NOT_FOUND;
 			if ( $this->makeSphinxQueries($book_name, $authors) ) {
-				#{Sphinx Weight} / {Number of Words in Search Query} / {Number of Fields in Sphinx			Database} / 12
+				
 				foreach ( $this->_matches as $seq_id => $docinfo )
 				{
 					//контрольная проверка - есть ли найденное название в запросе
 					$query = array( "_seq_id" => $seq_id );
-					$projection = array( "name" => true );
+					$projection = array( "name" => true, "price_authors" => true );
 					$m_book = $mdb_bc->findOne($query, $projection);
 					if ( strpos($arg_data['n'], $m_book['name']) === false ) continue;
 					
-					//ок, книга подходит
+					//ок, книга подходит. Проверим вхождение авторов найденной книги в исходную строку авторов, если нет совпадения - результат неточный
+					$is_authors_found = true;
+					if ( !empty( $arg_data['a'] ) && $arg_data['a'] != $arg_data['n'] )
+					{
+// 						var_dump($m_book);
+						$authors_reverse = preg_split( '/[\s,-]+/', $this->prepareAuthor($m_book['price_authors']) );
+						foreach( $authors_reverse as $author )
+						{
+							$this->log( 'Search in authors for "'. $author. '"');
+							if ( strpos( $arg_data['a'], $author ) === false )
+							{
+								$is_authors_found = false;
+								break;
+							}
+						}						
+					}
+					if ( $is_authors_found ) $this->log( 'Authors found.' );
+					
+					#{Sphinx Weight} / {Number of Words in Search Query} / {Number of Fields in Sphinx Database} / 12
 					$percentage = round( $docinfo['weight'] / $this->_sv['wc'] / 2 / 128, 2 );
  					if ( $percentage > 1 ) $percentage = 1;
-					if ( $percentage >= 0.9 )
+ 					$this->log('percentage: '. $percentage);
+					if ( $percentage >= 0.9 && $is_authors_found )
 						$found_flag = SEARCH_QUALITY_EXCELLENT; //Точное совпадение
-					elseif ( $percentage >=  0.1 )
+					elseif ( $percentage >=  0.1 && $is_authors_found )
 						$found_flag = SEARCH_QUALITY_GOOD; //Не точное совпадение
 					else { //Плохое совпадение, выходим
 						$data = array( "search_results"	=> array( "count" => 0 ) );
@@ -264,7 +291,7 @@ class SphinxSearchCommand extends CConsoleCommand
 		
 
 		if ($this->is_debug == 1) {
-			if ( !empty( $this->_matches ) )
+			if ( count( $matches ) )
 			{
 				$mdb_bc = $mdb_conn->tender->books_catalog;
 				$query = array( "_seq_id" => array( '$in' => $seq_ids ) );
@@ -275,11 +302,12 @@ class SphinxSearchCommand extends CConsoleCommand
 					for( $m = 0; $m < count($matches); $m++ )
 						if ( $matches[$m]['_seq_id'] == $find_book['_seq_id'] )
 							$matches[$m] = array_merge( $find_book,$matches[$m]);
+				var_dump($matches);
 			}
 			else 
-				print_r("no matches found.");
-			var_dump($matches);
-			var_dump($this->_sph);
+				$this->log("no matches found.");
+
+// 			var_dump($this->_sph);
 			exit();
 		}
 		
@@ -289,6 +317,11 @@ class SphinxSearchCommand extends CConsoleCommand
 		$arg_data['f'] = $found_flag;
 		$this->_bus->triggerSphinxCompleteRequest( $arg_data );
 		return RET_OK;
+	}
+	
+	public function log($msg)
+	{
+		if ( $this->is_debug > 0 )	print($this->book_id.": {$msg}\n");
 	}
 }
 
