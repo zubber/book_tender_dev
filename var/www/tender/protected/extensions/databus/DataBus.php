@@ -31,8 +31,7 @@
 				$this->_rh = false;
 				return false;
 			}
-			#$mdb_conn = new MongoClient( $this->_config['params']['mongo'] );
-			$mdb_conn = new MongoClient( '127.0.0.1:27017' );
+			$mdb_conn = new MongoClient( $this->_config['mongo'] );
 			$this->_mdb = $mdb_conn->tender;
 		}
 		
