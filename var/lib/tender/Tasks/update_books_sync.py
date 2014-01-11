@@ -8,7 +8,7 @@ from pymongo import MongoReplicaSetClient
 
 MONGO_HOST = "127.0.0.1"
 pp = pprint.PrettyPrinter(indent=4)
-logging.basicConfig(format = u'%(levelname)-8s [%(asctime)s] %(message)s', level = logging.INFO, filename = u'mylog.log')
+logging.basicConfig(format = u'%(levelname)-8s [%(asctime)s] %(message)s', level = logging.INFO, filename = u'/tmp/update_books_sync.log')
 def ilog(msg):
 	 logging.info( unicode( os.getpid() ) + ": " + msg )
 	
@@ -49,6 +49,9 @@ def process_url(source_url):
 			try:
 				xml_str = urllib2.urlopen(url)
 			except:
+				if tries < 4:
+					p = p + 1
+					continue
 				wlog("error requesting " + url)		
 		
 			try:
