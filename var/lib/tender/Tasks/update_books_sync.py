@@ -50,7 +50,7 @@ def process_url(source_url):
 				xml_str = urllib2.urlopen(url)
 			except:
 				if tries < 4:
-					p = p + 1
+					tries = tries + 1
 					continue
 				wlog("error requesting " + url)		
 		
