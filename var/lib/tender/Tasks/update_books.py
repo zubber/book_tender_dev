@@ -181,9 +181,10 @@ def parent(url):
 			channel.exchange_declare(exchange='books_broadcast', exchange_type='fanout')
 			
 			#2. Опубликуем сообщения о разборе урлов
-			rng = [273,316,351,352,382,411,493,492,513,512,539]
-  			#for p in range(1,int(total_pages)+1):
-  			for p in rng:
+			#rng = [273,316,351,352,382,411,493,492,513,512,539]
+			#for p in rng:
+  			for p in range(1,int(total_pages)+1):
+  			
   				message = {'action':'parse_url', 'url' : url + '&page=' + `p`, 'task' : p}
   				publish(channel,message)
 

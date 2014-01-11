@@ -25,7 +25,7 @@
 			$this->_rh = new Redis();
 				
 			#if ( ! $this->_rh->pconnect( $this->_config['redis']['host'], $this->_config['redis']['port'] ) )
-			if ( ! $this->_rh->pconnect( 'localhost', 6379 ) )
+			if ( ! $this->_rh->pconnect( 'localhost', 6379, 60*60*24*180 ) )
 			{
 				$this->log( "error connect to redis (" . $this->_config['redis']['host'] . ", " . $this->_config['redis']['port'] . ")" );
 				$this->_rh = false;

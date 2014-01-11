@@ -20,6 +20,11 @@ class GenExcelCommand extends CConsoleCommand
     	$data = json_decode($args[0], true);					#var_dump($data);
     	$new_xls = Yii::app()->params['xls_files']['done']['path'].'/'.$data['x'];
     	$proc_xls = Yii::app()->params['xls_files']['processing']['path'].'/'.$data['x'];
+    	if (!file_exists($proc_xls) ) //fix если запускаем к уже обработанному файлу
+    	{
+   			$this->complete(file_exists($new_xls)?GENEXCEL_RET_SUCCESS:GENEXCEL_RET_ERR_NO_FILE, $data);
+   			exit();
+    	}
 #    	$templ_xls = Yii::app()->params['xls_files']['template']['fullname'];
 		$this->log( "start processing $new_xls" );
 		$model = XlsFile::model()->getBooksData((int)$data['x']);
