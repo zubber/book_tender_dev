@@ -42,7 +42,7 @@ function filter_xml($matches)
 
 function _log($msg)
 {
-	print "$msg\n";
+	print date('Y-m-d H:m:s') .  ": $msg\n";
 }
 
 function _warn($msg)
