@@ -42,7 +42,7 @@ class MKUpdateBooksCatalogCommand extends CConsoleCommand
 				foreach (  $mk_data["products"]["product"] as $book ) {
 					$query = array( 'xml_id' => $book["xml_id"]);
 					$old_book = $mdc->findOne($query);
-					if ($old_book && $old_book["_seq_id"]) {
+					if ($old_book && isset($old_book["_seq_id"])) {
 						$book['_seq_id'] = $old_book["_seq_id"];
  						$mdc->update($query,$book);
 					} 
