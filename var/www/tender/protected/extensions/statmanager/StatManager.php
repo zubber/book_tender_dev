@@ -17,17 +17,17 @@ class StatManager extends DataBus
 			"XlsUpload",
 			"XlsGetRecordCount",
 			"XlsRecordParsed",
-			"GBRequest",
-			"GBCompleteRequest",
-			"MKCompleteRequest",
 			"XlsRecordEmpty",
 			"SphinxCompleteRequest",
+			"ProcessStack",
 			"XlsComplete"), array( $this, 'onEvent' ));
 	}
 	
 	public function onEvent( $redis, $chan, $msg )
 	{
 		$data = json_decode($msg, true);
+file_put_contents( "/root/s", $chan, FILE_APPEND );
+file_put_contents( "/root/s", print_r($data, true), FILE_APPEND );	
 		switch($chan)
 		{
 			case "XlsUpload":
@@ -38,20 +38,6 @@ class StatManager extends DataBus
 						"rows_total" 	=> 0,
 						"rows_empty" 	=> 0,
 						"rows_tasked" => 0,
-// 						"gb_stat" => array( 
-// 							"c"		=> 0,
-// 							"c_10"	=> 0,
-// 							"c_11"	=> 0,
-// 							"c_12"	=> 0,
-// 						),
-// 						"mk_stat" => array(
-// 							"c"		=> 0,
-// 							"c_20"	=> 0,
-// 							"c_21"	=> 0,
-// 							"c_22"	=> 0,
-// 							"c_23"	=> 0,
-// 							"c_24"	=> 0,
-// 						),
 						"sphinx_stat" => array(
 							"c"		=> 0,
 							"c_10"	=> 0,
@@ -87,18 +73,7 @@ class StatManager extends DataBus
 				$criteria	= array( 'xls_id' => (int)$data['x'] );
 				$data 		= array( '$inc' => array( "rows_tasked" => 1 ) );
 				break;
-					
-			case "GBRequest":				#счетчик ежедневных запросов к google.books для контроля лимита
-				$obj		= "gb";
-				$op			= "upsert";
-				$criteria	= array( 'date' => date('Y-m-d') );
-				$data		= array( 
-					'$inc'	=> array( 'cnt' => 1 ),
-					'$push'	=> array( 'ts' => time() ),
-					'$set'	=> array( 'date' => date('Y-m-d') ) 
-				);
-				break;
-				
+
 			case "SphinxCompleteRequest":
 				$obj		= "xls";
 				$op			= "update";
@@ -106,21 +81,7 @@ class StatManager extends DataBus
 				$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
 				break;
 				
-			case "GBCompleteRequest":
-				$obj		= "xls";
-				$op			= "update";
-				$criteria	= array( 'xls_id' => (int)$data['x'] );
-#				$gb_stat	= array( "c" => 1, "c_".$data['s'] => 1 );
-				$data 		= array( '$inc' => array("gb_stat.c" => 1, "gb_stat.c_".$data['s'] => 1 ));
-				break;
-				
-			case "MKCompleteRequest":
-				$obj		= "xls";
-				$op			= "update";
-				$criteria	= array( 'xls_id' => (int)$data['x'] );
-				$data 		= array( '$inc' => array("mk_stat.c" => 1, "mk_stat.c_".$data['s'] => 1 ));
-				break;
-				
+			
 			case "XlsComplete":
 				$obj		= "xls";
 				$op			= "update";
@@ -130,7 +91,6 @@ class StatManager extends DataBus
 		}
 
 		$mdc = $this->_mdb->selectCollection("stat_$obj");
-				
 		switch($op)
 		{
 			case "insert" :
@@ -138,6 +98,7 @@ class StatManager extends DataBus
 				break;
 			case "update" :
 				$mdc->update( $criteria, $data );
+// 				var_dump($mdc->count($criteria));
 				break;
 			case "upsert" :
 				$mdc->update( $criteria, $data, array("upsert" => true) );
