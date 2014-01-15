@@ -53,7 +53,7 @@ class GenExcelCommand extends CConsoleCommand
 			foreach ( array_merge( Yii::app()->params['xls_fields'], Yii::app()->params['xls_fields_calc'] ) as $fn => $fp )
 			{
 				
-				if ( !isset($fp['col']) || !isset($row[$fn])) continue;
+				if ( !isset($fp['col']) || !isset($row[$fn]) || is_array($row[$fn])) continue;
 				$cell = $fp['col'].$row['row_num'];
 				if ( trim( $objPHPExcel->getSheet()->getCell($cell)->getValue() ) ) continue; //Не изменяем ячейку, если там было значение 
 				$objPHPExcel->getSheet()->setCellValue($cell, $row[$fn]);
