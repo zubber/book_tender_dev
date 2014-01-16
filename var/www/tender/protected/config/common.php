@@ -6,6 +6,7 @@ $commonParams = array(
 		// this is used in contact page
 		'adminEmail'=>'zubran@gmail.com',
 		'mongo' => 'mongodb://bib1.eksmo.ru:27017,bib2.eksmo.ru:27017,bib3.eksmo.ru:27017/?replicaSet=rs0&readPreference=secondaryPreferred',
+// 		'mongo' => 'mongodb://127.0.0.1:27017',
 		'databus' => array (
 			'redis' => array( 'host' => 'localhost', 'port' => 6379 ),
 		),
@@ -64,5 +65,10 @@ $commonParams = array(
 				'AIzaSyAsWocXh-68nLo7Ru9M0sdSWYbyynRHA3c',	#zubran@gmail.com
 		),
 		'GBDayLimit'	=> 1000,
+		'BooksCatalog'	=> array(
+				'ast' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_ast" ),
+				'eksmo' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_full" ),
+		)
+		
 );
 ?>

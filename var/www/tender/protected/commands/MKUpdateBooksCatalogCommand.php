@@ -7,17 +7,29 @@ class MKUpdateBooksCatalogCommand extends CConsoleCommand
 {
 	private $_bus = false;
 	private $total_pages;
+	protected $pid = null;
+	
 	function __construct() {
 		$this->_bus = new DataBus(Yii::app()->params);
+		$this->pid = posix_getpid();
 	}
 	
 	public function run($args) {
-		$url = $args[0];
-		$page = isset($args[1]) ? $args[1] : 1;
+		$name = $args[0];
+		$run_file = "/tmp/mkupdatecatalog_".$name;
+		//Проверим, есть ли файл с последней обработанной страницей
+		if ( file_exists($run_file) ) {
+			$last_run_data = unserialize(file_get_contents($run_file)); //PID,page
+			posix_kill($last_run_data['PID'],SIGTERM); 		//Убъем последний запущеный процесс, начнем с той же страницы что и он
+		}
+		$page = isset($args[1]) ? $args[1] : isset($last_run_data) ? (int)$last_run_data['page'] : 1;
+		$url = Yii::app()->params['BooksCatalog'][$name]['url'];
+		
 		$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );		
 		$mdc = $mdb_conn->tender->books_catalog;
 		
 		do {
+			file_put_contents($run_file,serialize(array('page'=>$page,'PID'=>$this->pid)));
 			$request = $url.'&page='.$page;
 			try {
 				$mk_data = get_xml($request);
@@ -26,7 +38,7 @@ class MKUpdateBooksCatalogCommand extends CConsoleCommand
 				continue;
 			}
 			
-			$json_string = json_encode($mk_data);
+			$json_string = json_encode($mk_data); //удобная конвертация XML в php array
 			$mk_data = json_decode($json_string, TRUE);
 				
 // var_dump($mk_data);exit();
@@ -58,8 +70,7 @@ class MKUpdateBooksCatalogCommand extends CConsoleCommand
  				$page += 1;
 			}
 			else {
-				_log( 'INCORRECT ARRAY:  ' . print_r($mk_data)); 
-				exit();
+				_log( 'SKIPPING INCORRECT ARRAY:  ' . print_r($mk_data)); 
 			}
 		} while (1);
 	}
