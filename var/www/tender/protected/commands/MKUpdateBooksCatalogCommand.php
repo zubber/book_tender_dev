@@ -52,7 +52,9 @@ class MKUpdateBooksCatalogCommand extends CConsoleCommand
 				}
 					
 				foreach (  $mk_data["products"]["product"] as $book ) {
-					$query = array( 'xml_id' => $book["xml_id"]);
+					if (isset($book['price_authors']) && $book['price_authors'] == '<не указано>')
+					    $book['price_authors'] = '';
+					$query = array( 'xml_id' => (string)$book["xml_id"]);
 					$old_book = $mdc->findOne($query);
 					if ($old_book && isset($old_book["_seq_id"])) {
 						$book['_seq_id'] = $old_book["_seq_id"];
