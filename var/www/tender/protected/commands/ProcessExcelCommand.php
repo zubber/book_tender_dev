@@ -4,7 +4,7 @@ require_once(dirname(__FILE__).'/../extensions/databus/DataBus.php');
 
 define('RET_ERR_NO_FILE', 1 );
 
-class ProcessExcelCommand extends CConsoleCommand
+class ProcessExcelCommand extends TenderConsoleCommand
 {
     public function actionIndex($type, $limit=5) {  }
     public function actionInit() {  }
@@ -18,13 +18,14 @@ class ProcessExcelCommand extends CConsoleCommand
     
     protected function _importExcel($inputFileName, $xlsFileId)
     {
+$this->beginProfile('total');
     	require_once dirname(__FILE__).'/../vendors/PHPExcel/PHPExcel.php';
     	require_once dirname(__FILE__).'/../vendors/PHPExcel/PHPExcel/Autoloader.php';
     	Yii::registerAutoloader(array('PHPExcel_Autoloader','Load'), true);
-    	
+$this->beginProfile('_importExcel:loadExcelAndFile');
     	$objPHPExcel = PHPExcel_IOFactory::load($inputFileName);
     	$sheet_array = $objPHPExcel->getActiveSheet()->toArray(null, true, true, true);
-    	 
+$this->endProfile('_importExcel:loadExcelAndFile');    	 
     	$counter = 0;
     	$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
     	$mdb_books = $mdb_conn->tender->books;
@@ -34,7 +35,7 @@ class ProcessExcelCommand extends CConsoleCommand
     	$seq_ret = array( 'seq' => 1 );
     	$is_success_save = 1;
     	$this->_bus->triggerXlsGetRecordCount( array( 'x' => $xlsFileId, 'c' => count($sheet_array) - 1));
-    	
+$this->beginProfile('_importExcel:cycleTotal');
 	    foreach ( $sheet_array as $row ) {
 	    	$counter++;
 	    	if ( $counter == 1 ) continue;
@@ -49,8 +50,9 @@ class ProcessExcelCommand extends CConsoleCommand
 	    	$author		= $row['E'];
 	    	$cover		= $row['F'];
 	    	$count		= (int)$row['Y'];
+$this->beginProfile('_importExcel:row:findAndModifySeq');
 			$seq = $mdb_seq->findAndModify($seq_query,$seq_mod,$seq_ret);
-			
+$this->endProfile('_importExcel:row:findAndModifySeq');
     		$m_row = array(
     			'b_id'		=> (int)$seq['seq'],
     			'name'		=> $book_name,
@@ -63,12 +65,14 @@ class ProcessExcelCommand extends CConsoleCommand
     		
     		if ( isset( $row['D'] ) )
     			 $m_row['source_isbn'] = $row['D'];
-    		
+$this->beginProfile('row:insertRow');
     		$mdb_books->insert($m_row);
+$this->endProfile('row:insertRow');
     		$msg_data = array( 'b' => $seq['seq'], 'n' => htmlspecialchars($book_name,ENT_QUOTES ), 'x' => $xlsFileId, 'a' => $author );
 			$this->_bus->triggerXlsRecordParsed($msg_data); 
 		}
-		$this->log( "end" );
+		$this->endProfile('_importExcel:cycleTotal');
+$this->endProfile('total');
     }
 
     public function run($args)
@@ -79,14 +83,9 @@ class ProcessExcelCommand extends CConsoleCommand
 		$this->_importExcel($data['f'], (int)$data['i']);
 		rename($data['f'],$file);
 		$this->log( "end processing ".$file );
+		$this->afterAction();
 		return RET_OK;
     }
-    
-    private function log($msg)
-    {
-    	echo "processexcel: $msg";
-    }
-   
 }
 
 ?>

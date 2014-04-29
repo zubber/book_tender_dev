@@ -14,7 +14,7 @@ define( "SEARCH_QUALITY_GOOD", 1 );
 define( "SEARCH_QUALITY_POOR", 0 );
 define( "SEARCH_QUALITY_NOT_FOUND", 0 );
 
-class SphinxSearchCommand extends CConsoleCommand
+class SphinxSearchCommand extends TenderConsoleCommand
 {
 	private $_bookKeys 			= array( 'authors', 'publishedDate', 'publisher', 'industryIdentifiers', 'pageCount', 'printType', 'title', 'canonicalVolumeLink');
 	private $_config 				= false;
@@ -112,6 +112,7 @@ class SphinxSearchCommand extends CConsoleCommand
 	
 	public function makeSphinxQueries($book_name, $authors)
 	{
+$this->beginProfile('searchInSphinxPrepare');
 		$s = new SphinxClient;
 		$s->setServer("127.0.0.1", 9312);
 		$s->setMaxQueryTime(300);
@@ -123,10 +124,13 @@ class SphinxSearchCommand extends CConsoleCommand
 		$result = array();
 		$max = count($this->_sph);
 		$is_match = false;
+$this->endProfile('searchInSphinxPrepare');
 		do {
 			$this->_sv = &$this->_sph[$index];
+			$this->endProfile('searchInSphinxBegin');
+$this->beginProfile('searchInSphinxQuery');
 			$result = $s->query($this->_sv['q']);
-			
+$this->endProfile('searchInSphinxQuery');
 			if ( $result === false ) {
 				print_r( "ERROR Query failed: " . $s->GetLastError() . ".\n" . "Query: " . $this->_sv['q'] . "\n\r");
 				exit();
@@ -146,11 +150,13 @@ class SphinxSearchCommand extends CConsoleCommand
 			}
 			$index++;
 		} while( $index < $max );
+
 		return $is_match;
 	}
 	
 	public function run($args)
 	{
+$this->beginProfile('total');
 		$arg_data = json_decode($args[0],  true);
 		$seq_ids = array();
 		
@@ -170,34 +176,36 @@ class SphinxSearchCommand extends CConsoleCommand
 			echo 'Last error: ', $json_errors[$le], PHP_EOL, PHP_EOL;
 			return RET_ERR_JSON_ENCODE;
 		}
-		
+$this->beginProfile('preparePhrase');
 		$book_id = $arg_data['b'];
 		if ( $arg_data['n'] == $arg_data['a'] )
 			$authors = '';
 		else
 			$authors = $this->preparePhrase($arg_data['a']);
 		$book_name = $this->preparePhrase($arg_data['n']);
+$this->endProfile('preparePhrase');
 		$this->current_book = $book_name; //делается для журналирования
 		$this->current_author = $authors;
 		$this->book_id = $arg_data['b'];
-		$this->log( 'Begin book ' . $book_name . ". Author:" . $authors);
-		
+$this->log( 'Begin book ' . $book_name . ". Author:" . $authors);
+	
 		$wc = count(preg_split( "/[\s.,;]+/", $arg_data['n'] ));		#var_dump($wc); die;
-		
+$this->beginProfile('searchBookAlreadyInMongo');		
 		$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
 		$mdb_bc = $mdb_conn->tender->books_catalog;
 		$mdb_a = $mdb_conn->tender->mk_authr;
 		$query = array( "name" => $book_name ); //TODO: поиск по автору
- 
 		$m_cur = $mdb_bc->find($query);
 		$m_book = false;
 		$matches = array();
 		
 		//пробуем точное совпадение
 		$exact_query = array('name' => trim($book_name));
-		if ( $authors ) $exact_query['price_authors'] = $authors;
+		if ( $authors ) 
+			$exact_query['price_authors'] = $authors;
 		$m_book = $mdb_bc->findOne($exact_query);		
-
+$this->endProfile('searchBookAlreadyInMongo');
+		
 		if ( $m_book )
 		{
 			$matches = array(array(
@@ -218,9 +226,9 @@ class SphinxSearchCommand extends CConsoleCommand
 			$status = 11;
 		}
 		else {
+$this->beginProfile('searchInSphinxAllQueries');
 			$status = 10;
 			$mdb_bc = $mdb_conn->tender->books_catalog;
-				
 			$found_flag = SEARCH_QUALITY_NOT_FOUND;
 			if ( $this->makeSphinxQueries($book_name, $authors) ) {
 				
@@ -282,7 +290,7 @@ class SphinxSearchCommand extends CConsoleCommand
 					$status = 11;
 				}
 			}
-
+$this->endProfile('searchInSphinxAllQueries');
 		}
 		
 		if ( !count( $matches ) )
@@ -308,6 +316,7 @@ class SphinxSearchCommand extends CConsoleCommand
 				$this->log("no matches found.");
 
 // 			var_dump($this->_sph);
+			$this->afterAction();
 			exit();
 		}
 		
@@ -316,13 +325,15 @@ class SphinxSearchCommand extends CConsoleCommand
 		$arg_data['s'] = $status;
 		$arg_data['f'] = $found_flag;
 		$this->_bus->triggerSphinxCompleteRequest( $arg_data );
+$this->endProfile('total');
+		$this->afterAction();
 		return RET_OK;
 	}
 	
-	public function log($msg)
-	{
-		if ( $this->is_debug > 0 )	print($this->book_id.": {$msg}\n");
-	}
+// 	public function log($msg)
+// 	{
+// 		if ( $this->is_debug > 0 )	print($this->book_id.": {$msg}\n");
+// 	}
 }
 
 function sort_by_weight($a, $b)
