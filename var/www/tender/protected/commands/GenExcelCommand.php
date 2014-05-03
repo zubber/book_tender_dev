@@ -3,7 +3,7 @@ Yii::import('application.models.Book');
 require_once(dirname(__FILE__).'/../extensions/databus/DataBus.php');
 
 
-class GenExcelCommand extends CConsoleCommand
+class GenExcelCommand extends TenderConsoleCommand
 {
     public function actionIndex($type, $limit=5) {  }
     public function actionInit() {  }
@@ -96,7 +96,7 @@ class GenExcelCommand extends CConsoleCommand
     	$this->_bus->triggerXlsComplete( array( 'x' => $data['x'], 's' => $status ) );
     }
     
-    private function log($msg)
+    public function log($msg)
     {
     	echo "genexcel: $msg";
     }
