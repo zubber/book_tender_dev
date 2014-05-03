@@ -71,7 +71,7 @@ $this->endProfile('row:insertRow');
     		$msg_data = array( 'b' => $seq['seq'], 'n' => htmlspecialchars($book_name,ENT_QUOTES ), 'x' => $xlsFileId, 'a' => $author );
 			$this->_bus->triggerXlsRecordParsed($msg_data); 
 		}
-		$this->endProfile('_importExcel:cycleTotal');
+$this->endProfile('_importExcel:cycleTotal');
 $this->endProfile('total');
     }
 

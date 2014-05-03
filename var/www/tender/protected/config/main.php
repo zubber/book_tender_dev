@@ -80,11 +80,18 @@ return array(
 					'class'=>'CWebLogRoute',
 				),
 				*/
+				array(
+					'class'=>'CProfileLogRoute',
+					'report'=>'summary',
+				),
 			),
+		),
+		'cache' => array(
+				'class' => 'CApcCache',
 		),
 	),
 
 	// application-level parameters that can be accessed
 	// using Yii::app()->params['paramName']
-	'params'=> $commonParams,
+	'params'=> params::$params,
 );

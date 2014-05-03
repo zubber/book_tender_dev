@@ -13,11 +13,13 @@ class TenderConsoleCommand extends CConsoleCommand {
 	
 	static public function beginProfile($name)
 	{
+		if( !Yii::app()->params['enable_profiling'] ) return;
 		array_push(self::$_blocks,array('name'=>$name,'start'=>microtime(true)));
 	}
 	
 	static public function endProfile($name)
 	{
+		if( !Yii::app()->params['enable_profiling'] ) return;
 		$last = end(self::$_blocks);
 		if ($last['name']!=$name)
 			return false;
@@ -30,7 +32,8 @@ class TenderConsoleCommand extends CConsoleCommand {
 	}
 
 	public function afterAction() {
-		file_put_contents('/tenderProfiler.log',self::$_out,FILE_APPEND);
+		if( !Yii::app()->params['enable_profiling'] ) return;
+		file_put_contents('/tmp/tenderProfiler.log',self::$_out,FILE_APPEND);
 	}
 }
 ?>

@@ -25,7 +25,8 @@ class QueueManager extends DataBus
 			"XlsRecordEmpty",
 			"XlsComplete",
 			"ProcessStack",
-			"SphinxCompleteRequest",
+// 			"SphinxCompleteRequest",
+			"GenerateXLS"
 			), array( $this, 'onEvent' ));
 	}
 	
@@ -92,8 +93,6 @@ class QueueManager extends DataBus
 	{
 		$data = json_decode($msg, true);
 		$xls_id = $data['x'];
-//file_put_contents( "/root/q", $chan, FILE_APPEND );
-//file_put_contents( "/root/q", print_r($data, true), FILE_APPEND );		
 		switch($chan)
 		{
 			case "XlsUpload":
@@ -191,19 +190,24 @@ class QueueManager extends DataBus
            		}
            		break;
            		
-           	case "SphinxCompleteRequest":
-           		$this->_storage_save( $xls_id, array( '$inc' => array( 'sphinx_call' => -1 ) ) );
-           		$qm_data = $this->_mdc_qm->findOne(array( 'x' => (int)$xls_id ));
-           		if ( $qm_data && $qm_data['sphinx_call'] <= 0 )
-           		{
+//            	case "SphinxCompleteRequest":
+//            		$this->_storage_save( $xls_id, array( '$inc' => array( 'sphinx_call' => -1 ) ) );
+//            		$qm_data = $this->_mdc_qm->findOne(array( 'x' => (int)$xls_id ));
+//            		if ( $qm_data && $qm_data['sphinx_call'] <= 0 )
+//            		{
+//            			$command = "genexcel '" . json_encode(array('x'=>$data['x'])) . "'";
+//            			$pid = $this->runCommand($command);
+//            		}
+//            		$obj		= "xls";
+//            		$op			= "update";
+//            		$criteria	= array( 'xls_id' => (int)$data['x'] );
+//            		$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
+//            		break;       
+           		case "GenerateXLS":
            			$command = "genexcel '" . json_encode(array('x'=>$data['x'])) . "'";
            			$pid = $this->runCommand($command);
-           		}
-           		$obj		= "xls";
-           		$op			= "update";
-           		$criteria	= array( 'xls_id' => (int)$data['x'] );
-           		$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
-           		break;           		
+           			$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
+           			break;
 		}
 		$mdc = $this->_mdb->selectCollection("stat_$obj");
 		switch($op)
@@ -213,7 +217,6 @@ class QueueManager extends DataBus
 				break;
 			case "update" :
 				$mdc->update( $criteria, $data );
-				// 				var_dump($mdc->count($criteria));
 				break;
 			case "upsert" :
 				$mdc->update( $criteria, $data, array("upsert" => true) );

@@ -7,7 +7,8 @@ return array(
 	// preloading 'log' component
 	'preload'=>array('log'),
 	'import'=>array(
-			'application.models.XlsFile'
+			'application.models.XlsFile',
+			'application.components.*'
 	),
 	// application components
 	'components'=>array(
@@ -27,6 +28,9 @@ return array(
 				),
 			),
 		),
+		'cache' => array(
+				'class' => 'CApcCache',
+		),
 	),
-	'params' => $commonParams
+	'params' => params::$params
 );

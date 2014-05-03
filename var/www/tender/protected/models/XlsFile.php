@@ -88,13 +88,13 @@ class XlsFile extends CActiveRecord
 		$ready_total = $xls_data['sphinx_stat']['f_0'] + $xls_data['sphinx_stat']['f_1'] + $xls_data['sphinx_stat']['f_2'];
 		if ( $ready_total > 0 )
 			$avg = round( ( ( $xls_data['sphinx_stat']['f_1'] + $xls_data['sphinx_stat']['f_2'] ) / $ready_total ) * 100 );
-		
 		$xls_data['sphinx_stat']['average_percentage'] = $avg;
-		return( array(
+		$ret = array(
 			'xls_data'	=> $xls_data,
 			'qm_data'	=> $qm_data,
 // 			'gb_data'	=> $gb_data
-		));
+		);
+		return($ret);
 	}
 	
 	

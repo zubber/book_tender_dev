@@ -2,11 +2,11 @@
 define('GENEXCEL_RET_SUCCESS', 1 );
 define('GENEXCEL_RET_ERR_NO_FILE', 2 );
 require_once dirname(__FILE__).DIRECTORY_SEPARATOR.'../extensions/Kint/Kint.php';
-$commonParams = array(
+
+class params {
+	public static $params = array(
 		// this is used in contact page
 		'adminEmail'=>'zubran@gmail.com',
-		'mongo' => 'mongodb://bib1.eksmo.ru:27017,bib2.eksmo.ru:27017,bib3.eksmo.ru:27017/?replicaSet=rs0&readPreference=secondaryPreferred',
-// 		'mongo' => 'mongodb://127.0.0.1:27017',
 		'databus' => array (
 			'redis' => array( 'host' => 'localhost', 'port' => 6379 ),
 		),
@@ -70,5 +70,8 @@ $commonParams = array(
 				'eksmo' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_full" ),
 		)
 		
-);
+	);
+}
+if (is_file(__DIR__.'/common_local.php'))
+	require_once(__DIR__.'/common_local.php');
 ?>

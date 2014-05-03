@@ -54,7 +54,7 @@ class Kint
         if (!function_exists('s')) {
             function s()
             {
-                if (!Kint::$enabled) return;
+//                 if (!Kint::$enabled) return;
 
                 $argv = func_get_args();
                 echo '<pre>';
@@ -67,7 +67,7 @@ class Kint
 
             function sd()
             {
-                if (!Kint::$enabled) return;
+//                 if (!Kint::$enabled) return;
 
                 echo '<pre>';
                 foreach (func_get_args() as $k => $v) {
