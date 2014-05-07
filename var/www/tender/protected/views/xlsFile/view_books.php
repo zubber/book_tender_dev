@@ -31,7 +31,7 @@ class catalogRecord {
 					$ret = '<a href="javascript:/*seq_id='.$seq_id.'&book_id='.$data->b_id.'*/;">'.self::$booksCatalogData[$seq_id][$name].'</a>';
 					break;
 				default:
-					$ret = self::$booksCatalogData[$seq_id][$name];
+					$ret = isset(self::$booksCatalogData[$seq_id][$name]) ? self::$booksCatalogData[$seq_id][$name] : '';
 			}
 			return $ret;
 		}
