@@ -9,14 +9,16 @@
  * @property string $password
  * @property string $email
  */
-class User extends CActiveRecord
+class User extends EMongoDocument
 {
+	public $_id;
+	
 	/**
 	 * @return string the associated database table name
 	 */
-	public function tableName()
+	public function collectionName()
 	{
-		return 'tbl_user';
+		return 'users';
 	}
 
 	/**
@@ -31,7 +33,7 @@ class User extends CActiveRecord
 			array('username, password, email', 'length', 'max'=>128),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, username, password, email', 'safe', 'on'=>'search'),
+			array('_id, username, password, email', 'safe', 'on'=>'search'),
 			array('password', 'safe', 'on'=>'update'),
 		);
 	}
@@ -53,7 +55,7 @@ class User extends CActiveRecord
 	public function attributeLabels()
 	{
 		return array(
-			'id' => 'ID',
+			'_id' => 'ID',
 			'username' => 'Логин',
 			'password' => 'Пароль',
 			'email' => 'Email',
@@ -74,17 +76,13 @@ class User extends CActiveRecord
 	 */
 	public function search()
 	{
-		// @todo Please modify the following code to remove attributes that should not be searched.
+		$criteria = new EMongoCriteria;
 
-		$criteria=new CDbCriteria;
-
-		$criteria->compare('id',$this->id);
-		$criteria->compare('username',$this->username,true);
-		$criteria->compare('password',$this->password,true);
-		$criteria->compare('email',$this->email,true);
-
-		return new CActiveDataProvider($this, array(
-			'criteria'=>$criteria,
+		if($this->_id!==null)
+			$criteria->compare('_id', new MongoId($this->_id));
+		//$criteria->compare('__v', $this->__v);
+		return new EMongoDataProvider(get_class($this), array(
+				'criteria' => $criteria,
 		));
 	}
 
@@ -97,5 +95,42 @@ class User extends CActiveRecord
 	public static function model($className=__CLASS__)
 	{
 		return parent::model($className);
+	}
+	
+	/**
+	 * Hashes our password, taken straight from the tutorial
+	 * @return string
+	 */
+	function hashPassword(){
+		return crypt($this->password,$this->blowfishSalt());
+	}
+
+	function beforeSave(){
+		$this->password=$this->hashPassword(); // lets hash that shiz
+		return parent::beforeSave();
+	}
+
+	/**
+	 * Generate a random salt in the crypt(3) standard Blowfish format.
+	 *
+	 * @param int $cost Cost parameter from 4 to 31.
+	 *
+	 * @throws Exception on invalid cost parameter.
+	 * @return string A Blowfish hash salt for use in PHP's crypt()
+	 */
+	function blowfishSalt($cost = 13)
+	{
+		if (!is_numeric($cost) || $cost < 4 || $cost > 31) {
+			throw new Exception("cost parameter must be between 4 and 31");
+		}
+		$rand = array();
+		for ($i = 0; $i < 8; $i += 1) {
+			$rand[] = pack('S', mt_rand(0, 0xffff));
+		}
+		$rand[] = substr(microtime(), 2, 6);
+		$rand = sha1(implode('', $rand), true);
+		$salt = '$2a$' . sprintf('%02d', $cost) . '$';
+		$salt .= strtr(substr(base64_encode($rand), 0, 22), array('+' => '.'));
+		return $salt;
 	}
 }

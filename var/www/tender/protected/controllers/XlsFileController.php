@@ -62,17 +62,20 @@ class XlsFileController extends Controller
 	 */
 	public function actionIndex()
 	{
+Yii::beginProfile('actionIndex');
 		$this->checkAuthorized();
+Yii::beginProfile('model');
 		$dataProvider=new CActiveDataProvider('XlsFile',array(
 				'criteria'=>array(
 						'condition'=>'user_id='.Yii::app()->user->id,
 						'order'=>'cr_date DESC',
 				)
 		));
-	
+Yii::endProfile('model');
 		$this->render('index',array(
 				'dataProvider'=>$dataProvider,
 		));
+Yii::endProfile('actionIndex');
 	}
 	
 	/**
@@ -99,11 +102,12 @@ class XlsFileController extends Controller
 	{
 		$model = $this->loadModel($id);
 		$this->checkAuthorized($model->user_id);
-		
-		$gridData = XlsFile::model()->getBooksData($id, $book_id);
+		$booksData = Book::model()->search(array('xls_id' => $id));
+		$booksCatalogData = Book::model()->getBooksInfo($booksData->getData());
 		$this->render('view_books',array(
-				'model' => $model,
-				'gridData'	=> $gridData
+			'model' => $model,
+			'booksData' => $booksData, 
+			'booksCatalogData'	=> $booksCatalogData
 		));
 	}
 
@@ -196,10 +200,11 @@ class XlsFileController extends Controller
 	{
 		switch($data['status'])
 		{
-			case 0:	$status = array( 'type'=> 'default', 'label' => 'в обработке' ); break;
-			case 1:	$status = array( 'type'=> 'success', 'label' => 'обработан' ); break;
-			case 2:	$status = array( 'type'=> 'important', 'label' => 'создание xls' ); break;
-				
+			case XLS_STAT_IN_QUEUE:			$status = array( 'type'=> 'default', 'label' => 'в очереди' ); break;
+			case XLS_STAT_BEGIN_PROCESSING:	$status = array( 'type'=> 'info', 'label' => 'в обработке' ); break;
+			case XLS_STAT_CREATE_XLS:		$status = array( 'type'=> 'info', 'label' => 'создание xls' ); break;
+			case XLS_STAT_SUCCESS:			$status = array( 'type'=> 'success', 'label' => 'обработан' ); break;
+			case XLS_STAT_ERR_NO_FILE:		$status = array( 'type'=> 'important', 'label' => 'нет файла' ); break;			
 		}
 		$this->widget('bootstrap.widgets.TbLabel', $status);
 	}

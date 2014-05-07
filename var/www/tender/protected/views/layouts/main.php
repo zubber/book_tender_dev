@@ -23,7 +23,9 @@
 
 <body>
 
-<?php $this->widget('bootstrap.widgets.TbNavbar',array(
+<?php 
+
+$this->widget('bootstrap.widgets.TbNavbar',array(
     'items'=>array(
         array(
             'class'=>'bootstrap.widgets.TbMenu',

@@ -46,6 +46,14 @@ class UserController extends Controller
 			),
 		);
 	}
+	
+	public function actionLogin()
+	{
+	    if (!Yii::app()->user->isGuest){
+	        $this->redirect('/user/index');
+	    	return;
+    	}
+	}
 
 	/**
 	 * Displays a particular model.
@@ -127,10 +135,30 @@ class UserController extends Controller
 	 */
 	public function actionIndex()
 	{
-		$dataProvider=new CActiveDataProvider('User');
-		$this->render('index',array(
-			'dataProvider'=>$dataProvider,
+		$condition = array();
+		if(isset($_GET['User']))
+			$condition['_id'] = $_GET['User'];
+		$dataProvider=new EMongoDataProvider('User',array(
+		    'criteria' => array(
+		        'condition' => $condition,
+		        'sort' => array(),
+// 		        'skip' => 1,
+// 		        'limit' => 1
+		    ),
+		    /* All other options */
 		));
+		
+		$model=new User('search');
+// 		$model->unsetAttributes();  // clear any default values
+// 		if(isset($_GET['User']))
+// 			$model->attributes=$_GET['User'];		
+
+		$this->render('index',array('model'=>$model,'dataProvider'=>$dataProvider));
+		
+// 		$dataProvider=new CActiveDataProvider('User');
+// 		$this->render('index',array(
+// 			'dataProvider'=>$dataProvider,
+// 		));
 	}
 
 	/**
