@@ -117,8 +117,12 @@ class Book extends EMongoDocument
 				foreach( $fields as $field_name => $field_params )
 				{
 					$field_value = "";
-					if ( is_array($bookInCatalog) && isset($bookInCatalog[$field_name]) && is_array($bookInCatalog[$field_name]) && count($bookInCatalog[$field_name] ))
+					if ( is_array($bookInCatalog) && isset($bookInCatalog[$field_name]) && is_array($bookInCatalog[$field_name]) ) {
+					    if (count($bookInCatalog[$field_name] ))
 						$propValue = $bookInCatalog[$field_name][0];
+					    else
+						continue;
+					} 
 					elseif ( isset($bookInCatalog[$field_name] )) 
 						$propValue = $bookInCatalog[$field_name];
 					else 
@@ -132,7 +136,7 @@ class Book extends EMongoDocument
 								$dicts[$dictName] = array('name' => $field_params['id'], 'data' => array(), 'links' => array());
 							
 							$dicts[$dictName]['data'][] =  $propValue; //значение xml_id
-							
+//file_put_contents('/tmp/ff',print_r($bookInCatalog['_seq_id'].':'.$field_name.':'.print_r($bookInCatalog[$field_name],true)."\n",true),FILE_APPEND);
 							if (!isset($dicts[$dictName]['links'][$propValue]))
 								$dicts[$dictName]['links'][$propValue] = array();
 							$dicts[$dictName]['links'][$propValue][] = $bookInCatalog['_seq_id'];
