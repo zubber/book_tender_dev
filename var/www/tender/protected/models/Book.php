@@ -52,7 +52,6 @@ class Book extends EMongoDocument
 			'b_id' => 'ID',
 			'name' => 'Запрашиваемое имя книги',
 			'xls_id' => 'XLS ID'
-			
 		);
 	}
 
