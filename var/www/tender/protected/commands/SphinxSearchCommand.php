@@ -237,19 +237,20 @@ $this->beginProfile('searchInSphinxAllQueries');
 					//контрольная проверка - есть ли найденное название в запросе
 					$query = array( "_seq_id" => $seq_id );
 					$projection = array( "name" => true, "price_authors" => true );
-					$m_book = $mdb_bc->findOne($query, $projection);
+					$m_book = $mdb_bc->findOne($query, $projection); 
+if ($this->is_debug == 1) var_dump($m_book['name']);
 					if ( strpos($arg_data['n'], $m_book['name']) === false ) continue;
 					
 					//ок, книга подходит. Проверим вхождение авторов найденной книги в исходную строку авторов, если нет совпадения - результат неточный
 					$is_authors_found = true;
-					if ( !empty( $arg_data['a'] ) && $arg_data['a'] != $arg_data['n'] )
+					if ( !empty( $arg_data['a'] ) && $arg_data['a'] != $arg_data['n'] && !empty($m_book['price_authors']) && !is_array($m_book['price_authors'])  )
 					{
 // 						var_dump($m_book);
 						$authors_reverse = preg_split( '/[\s,-]+/', $this->prepareAuthor($m_book['price_authors']) );
 						foreach( $authors_reverse as $author )
 						{
 							$this->log( 'Search in authors for "'. $author. '"');
-							if ( strpos( $arg_data['a'], $author ) === false )
+							if ( !empty($author) && strpos( $arg_data['a'], $author ) === false )
 							{
 								$is_authors_found = false;
 								break;
