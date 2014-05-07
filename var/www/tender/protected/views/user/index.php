@@ -10,6 +10,7 @@ $this->menu=array(
 	array('label'=>'Create User', 'url'=>array('create')),
 	array('label'=>'Manage User', 'url'=>array('admin')),
 );
+// sd($dataProvider->data);
 ?>
 
 <h1>Users</h1>

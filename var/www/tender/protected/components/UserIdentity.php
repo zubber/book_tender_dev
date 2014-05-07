@@ -16,7 +16,7 @@ class UserIdentity extends CUserIdentity
 	public function authenticate()
 	{
 		
-		$record=User::model()->findByAttributes(array('username'=>$this->username));
+		$record=User::model()->findOne(array('username'=>$this->username));
 		if($record===null)
 			$this->errorCode=self::ERROR_USERNAME_INVALID;
 		else if($record->password!==crypt($this->password,$record->password))
@@ -24,8 +24,8 @@ class UserIdentity extends CUserIdentity
 		else
 		{
 			$this->_id=$record->id;
-			$this->setState('title', $record->name);
-			$this->errorCode=self::ERROR_NONE;
+			$this->setState('title', $record->username);
+			$this->errorCode=self::ERROR_NONE; //sd(11);
 		}
         return !$this->errorCode;
 	}
@@ -34,20 +34,4 @@ class UserIdentity extends CUserIdentity
 	{
 		return $this->_id;
 	}
-
-// 	public function authenticate()
-// 	{
-// 		$users=array(
-// 				// username => password
-// 				'demo'=>'demo',
-// 				'admin'=>'admin',
-// 		);
-// 		if(!isset($users[$this->username]))
-// 			$this->errorCode=self::ERROR_USERNAME_INVALID;
-// 		elseif($users[$this->username]!==$this->password)
-// 		$this->errorCode=self::ERROR_PASSWORD_INVALID;
-// 		else
-// 			$this->errorCode=self::ERROR_NONE;
-// 		return !$this->errorCode;
-// 	}
 }

@@ -11,7 +11,35 @@ array_push( $this->menu,
 	array('label'=>'Статистика этого файла', 'url'=>array('view&id='.$_GET['id'])),
 	array('label'=>'Перейти к списку загруженных файлов', 'url'=>array('index'))
 );
-
+// dd($booksCatalogData);
+class catalogRecord {
+	static protected $booksCatalogData;
+	public function __construct(&$booksCatalogData) {
+		self::$booksCatalogData = $booksCatalogData;
+	} 
+	
+	static public function renderCatalogField($name,&$data) { //dd($data);
+		if (
+			isset( $data->search_results ) 
+			&& isset( $data->search_results["matches"] ) 
+			&& isset($data->search_results["matches"][0])
+		) {
+// 			dd($name,$data->search_results,self::$booksCatalogData);
+			$seq_id = $data->search_results["matches"][0]['_seq_id'];
+			switch($name) {
+				case 'name':
+					$ret = '<a href="javascript:/*seq_id='.$seq_id.'&book_id='.$data->b_id.'*/;">'.self::$booksCatalogData[$seq_id][$name].'</a>';
+					break;
+				default:
+					$ret = self::$booksCatalogData[$seq_id][$name];
+			}
+			return $ret;
+		}
+		else 
+			return "";
+	}
+}
+new catalogRecord($booksCatalogData);
 ?>
 
 <h1><?php echo CHtml::encode($model->orig_name); ?></h1>
@@ -35,60 +63,62 @@ if ( $model['status'] == 1 )
 
 
 <?php 
-
-
-
+// dd($booksData);
 // dd($gridData);
-	$gridDataProvider = new CArrayDataProvider($gridData);
-	$gridDataProvider->pagination = false;
+// 	$gridDataProvider = new CArrayDataProvider($gridData);
+// 	$gridDataProvider->pagination = true;
+// dd(	$booksInfo );
 	$gridParams = array(
-	    'dataProvider'=>$gridDataProvider,
+	    'dataProvider'=>$booksData,
 #		'mergeColumns' => array('id', 'name', 'price_authors','isMore'),
 		'itemsCssClass'=>'table table-bordered table-condensed',
 		'summaryText'=>'',
 	    'columns'=>array(
-	        array('name'=>'id', 'header'=>'№'),
-	    	array('name'=>'original_name', 'header'=>'Вход. назв.'),
-	    	array('name'=>'original_author', 'header'=>'Вход. автор'),
-	    	array('name'=>'name', 'header'=>'Найденное назв.'),
-// 	    	array(
-// 	    			'name'=>'name',
-// 	    			'header'=>'Название',
-// 	    			'value' => 	'$data["canonicalVolumeLink"] ? "<a id=\'gr_name_".$data["id"]."\' href=\'" . $data["canonicalVolumeLink"] . "\' target=_blank>" . $data["name"]. "</a>" : "<span id=\'gr_name_".$data["id"]."\'>".$data["name"]."</span>"',
-// 	    			'type'=>'raw'),
-	    	array('name'=>'price_authors', 'header'=>'Найденный автор'),
-// 	        array(
-// 	        		'name'=>'authors',
-// 	        		'header'=>'Авторы',
-// 	        		'type'=>'raw',
-// 	        		'value' => 	'"<span id=\'gr_name_".$data["id"]."\'>".$data["authr"]."</span>"',
-// 	    	),
-	        array('name'=>'publi', 'header'=>'Издательство'),
-	    	array('name'=>'sdate_d', 'header'=>'Дата изд.'),
-	    	array('name'=>'isbnn', 'header'=>'ISBN', 'type'=>'raw'),
-	    	array('name'=>'price', 'header'=>'Цена', 'type'=>'raw'),
-	    	array('name'=>'remainder', 'header'=>'Остаток', 'type'=>'raw'),
-	    	array('name'=>'percentage', 'header'=>'Совпадение,%', 'type'=>'raw',
-	    			'value' => '$data["percentage"]*100',
-	    	),
-//     		array(
-//     			'name'=>'mk_request',
-//     			'header'=>'MK:request',
-//     			'value' => '$data["mk_request"] ? "<a href=\'" . $data["mk_request"] . "\' target=_blank>#</a>" : "-"',
-//     			'type'=>'raw'),
-
-// 	    	array(
-// 				'name'=>'gb_request',
-// 				'header'=>'GB:request',
-// 				'value' => '$data["request"] ? "<a href=\'" . $data["request"] . "\' target=_blank>#</a>" : "-"',
-// 				'type'=>'raw'),
+	        array('name'=>'row_num', 'header'=>'№'),
+	    	array('name'=>'name', 'header'=>'Вход. назв.'),
+	    	array('name'=>'author', 'header'=>'Вход. автор'),
+// 	    	array('name'=>'found_name', 'header'=>'Найденное назв.'),
+	    	array(
+    			'name'=>'found_name',
+    			'header'=>'Найденное назв.',
+	    		'value' => 'catalogRecord::renderCatalogField("name",$data)',
+	   			'type'=>'raw'),
+	    	array(
+    			'name'=>'price_authors',
+    			'header'=>'Найденный автор',
+	    		'value' => 'catalogRecord::renderCatalogField("price_authors",$data)',
+	   			'type'=>'raw'),
 	    		
-// 	    	array(
-// 				'name'=>'selfLink',
-// 				'header'=>'GB:selfLink',
-// 				'value' => '$data["selfLink"] ? "<a id=\'gr_name_".$data["id"]."\' href=\'" . $data["selfLink"] . "\' target=_blank>#</a>" : "-"',
-// 				'type'=>'raw'),
-	    		
+	    	array(
+    			'name'=>'publi',
+    			'header'=>'Издательство',
+	    		'value' => 'catalogRecord::renderCatalogField("publi",$data)',
+	   			'type'=>'raw'),
+	    	array(
+    			'name'=>'sdate_d',
+    			'header'=>'Дата изд.',
+	    		'value' => 'catalogRecord::renderCatalogField("sdate_d",$data)',
+	   			'type'=>'raw'),
+	    	array(
+    			'name'=>'isbnn',
+    			'header'=>'ISBN',
+	    		'value' => 'catalogRecord::renderCatalogField("isbnn",$data)',
+	   			'type'=>'raw'),
+	    	array(
+    			'name'=>'price',
+    			'header'=>'Цена',
+	    		'value' => 'catalogRecord::renderCatalogField("price",$data)',
+	   			'type'=>'raw'),
+	    	array(
+    			'name'=>'remainder',
+    			'header'=>'Остаток',
+	    		'value' => 'catalogRecord::renderCatalogField("remainder",$data)',
+	   			'type'=>'raw'),
+	    	array(
+    			'name'=>'percentage',
+    			'header'=>'Совпадение,%',
+	    		'value' => '(int)catalogRecord::renderCatalogField("percentage",$data)*100',
+	   			'type'=>'raw'),
 	    ),
 	);
 // 	if ( ! ( $book_id > 0 ) )

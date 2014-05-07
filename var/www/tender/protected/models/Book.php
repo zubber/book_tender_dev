@@ -11,14 +11,14 @@
  * @property integer $count
  * @property string $xlsFileId
  */
-class Book extends CActiveRecord
+class Book extends EMongoDocument
 {
 	/**
 	 * @return string the associated database table name
 	 */
-	public function tableName()
+	public function collectionName()
 	{
-		return 'tbl_book';
+		return 'books';
 	}
 
 	/**
@@ -29,12 +29,7 @@ class Book extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('name, xlsFileId', 'required'),
-			array('cover, count', 'numerical', 'integerOnly'=>true),
-			array('xlsFileId', 'length', 'max'=>11),
-			// The following rule is used by search().
-			// @todo Please remove those attributes that should not be searched.
-			array('id, name, author, cover, count, xlsFileId', 'safe', 'on'=>'search'),
+			array('name,b_id,xls_id', 'required'),
 		);
 	}
 
@@ -45,8 +40,7 @@ class Book extends CActiveRecord
 	{
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
-		return array(
-		);
+		return array();
 	}
 
 	/**
@@ -55,12 +49,10 @@ class Book extends CActiveRecord
 	public function attributeLabels()
 	{
 		return array(
-			'id' => 'ID',
-			'name' => 'Name',
-			'author' => 'Author',
-			'cover' => 'Cover',
-			'count' => 'Count',
-			'xlsFileId' => 'Xls File',
+			'b_id' => 'ID',
+			'name' => 'Запрашиваемое имя книги',
+			'xls_id' => 'XLS ID'
+			
 		);
 	}
 
@@ -76,22 +68,94 @@ class Book extends CActiveRecord
 	 * @return CActiveDataProvider the data provider that can return the models
 	 * based on the search/filter conditions.
 	 */
-	public function search()
+	public function search($arSearch)
 	{
-		// @todo Please modify the following code to remove attributes that should not be searched.
-
-		$criteria=new CDbCriteria;
-
-		$criteria->compare('id',$this->id,true);
-		$criteria->compare('name',$this->name,true);
-		$criteria->compare('author',$this->author,true);
-		$criteria->compare('cover',$this->cover);
-		$criteria->compare('count',$this->count);
-		$criteria->compare('xlsFileId',$this->xlsFileId,true);
-
-		return new CActiveDataProvider($this, array(
-			'criteria'=>$criteria,
+		$criteria = new EMongoCriteria;
+		if (isset($arSearch['xls_id']))
+			$criteria->setCondition(array('xls_id' => (int)$arSearch['xls_id']));
+		if($this->_id!==null)
+			$criteria->compare('_id', new MongoId($this->_id));
+		$res = new EMongoDataProvider(get_class($this), array(
+			'criteria' => $criteria,
+			'pagination'=>array(
+		        'pageSize'=>50,
+		    ),
 		));
+		return $res;
+	}
+	
+	public function getBooksInfo($booksData) {
+		//1. получили выборку из books_catalog по $book['search_results']['matches'][0]
+		$booksCatalogQuery = array(); 
+		$booksCatalogInfo = array();
+		$fields = array_merge( Yii::app()->params['xls_fields'], Yii::app()->params['xls_fields_calc'] );
+		
+		for($i=0; $i<count($booksData); $i++)
+		{
+			$book = $booksData[$i]['attributes'];
+			$book_data = array();		
+			if ( isset( $book['search_results'] ) && $book['search_results']['count'] > 0 ) {
+				$best_result = $book['search_results']['matches'][0];
+				$booksCatalogQuery[] = $best_result['_seq_id'];	
+				$booksCatalogInfo[$best_result['_seq_id']] = array(
+					'weight' 		=> $best_result['weight'],
+					'percentage'	=> $best_result['percentage'],
+					'foundCount'	=> $book['search_results']['count'],
+				);
+			}
+		}
+		if (count($booksCatalogQuery))
+		{
+			$booksCatalogQuery = array('_seq_id' => array('$in' => array_unique($booksCatalogQuery)));
+			$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
+			$booksCatalog = $mdb_conn->tender->books_catalog->find($booksCatalogQuery); //sd($booksCatalog->count()); // sd($booksCatalogQuery);
+			
+			//2. прошлись по выборке из books_catalog, собрали в массивы все значения словарей (тип mkdict) для разыменований
+			$dicts = array();
+			$linksToBooks = array();
+			foreach( $booksCatalog as $bookInCatalog) {//				s($bookCatalog);
+				$book_data = array();
+				foreach( $fields as $field_name => $field_params )
+				{
+					$field_value = "";
+					if (isset($bookInCatalog[$field_name] ) )
+					{
+						switch($field_params['type']) {
+							case "mkdict":
+								$dictName = $field_name;
+								if (!isset($dicts[$dictName]))
+									$dicts[$dictName] = array('name' => $field_params['id'], 'data' => array(), 'links' => array());
+								$dicts[$dictName]['data'][] =  $bookInCatalog[$field_name]; //значение xml_id
+								if (!isset($dicts[$dictName]['links'][$bookInCatalog[$field_name]]))
+									$dicts[$dictName]['links'][$bookInCatalog[$field_name]] = array();
+								$dicts[$dictName]['links'][$bookInCatalog[$field_name]][] = $bookInCatalog['_seq_id'];
+							default:
+								$field_value = $bookInCatalog[$field_name];
+						}
+					}
+					
+					$book_data[$field_name] = $field_value;
+				}
+				$booksCatalogInfo[$bookInCatalog['_seq_id']] = array_merge($booksCatalogInfo[$bookInCatalog['_seq_id']],$book_data);	
+			}
+
+			//3. Прошлись по dicts, собрали значения словарей
+			foreach ($dicts as $fieldName => $dictRequestData) {
+				$dictQuery = array($dictRequestData['name'] => array('$in' => array_unique($dictRequestData['data'])));
+				$dictName = "mk_$fieldName";
+				$dictData = $mdb_conn->tender->$dictName->find( $dictQuery );
+				foreach($dictData as $dictItem)
+					foreach($dictRequestData['links'] as $xlsId => $arSeqId)
+						for ($i=0; $i<count($arSeqId); $i++) {
+							$booksCatalogInfo[$arSeqId[$i]][$fieldName] = $dictItem['name'];
+						}
+			} 
+		}
+		return $booksCatalogInfo;
+	}
+	
+	public function onAfterFind($event) {
+		sd($event);
 	}
 
 	/**

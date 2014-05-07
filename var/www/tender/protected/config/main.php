@@ -5,10 +5,10 @@
 
 require_once('common.php');
 Yii::setPathOfAlias('bootstrap', dirname(__FILE__).'/../extensions/bootstrap'); 
-return array(
+$params = array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
 	'name'=>'ИС Библиотека-Тендер',
-
+	'language'=>'ru',
 	// preloading 'log' component
 	'preload'=>array('log','bootstrap','kint'),
 
@@ -16,6 +16,10 @@ return array(
 	'import'=>array(
 		'application.models.*',
 		'application.components.*',
+		'application.extensions.MongoYii.*',
+		'application.extensions.MongoYii.validators.*',
+		'application.extensions.MongoYii.behaviors.*',
+		'application.extensions.MongoYii.util.*'
 	),
 		
 	'theme'=>'bootstrap',
@@ -34,8 +38,15 @@ return array(
 	
 	// application components
 	'components'=>array(
-		'user'=>array(
-			// enable cookie-based authentication
+		'mongodb' => params::$params['mongodb'],
+		'authManager' => array(
+		    'class' => 'application.extensions.MongoYii.util.EMongoAuthManager',
+		),
+		'session' => array(
+		    'class' => 'application.extensions.MongoYii.util.EMongoSession',
+		),
+		'user' => array(
+			'class' => 'EWebUser',
 			'allowAutoLogin'=>true,
 		),
 		'kint' => array(
@@ -62,7 +73,6 @@ return array(
 			'password' => '',
 			'charset' => 'utf8',
 		),
-		
 		'errorHandler'=>array(
 			// use 'site/error' action to display errors
 			'errorAction'=>'site/error',
@@ -95,3 +105,5 @@ return array(
 	// using Yii::app()->params['paramName']
 	'params'=> params::$params,
 );
+// print_r($params);die;
+return $params;

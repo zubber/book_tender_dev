@@ -3,12 +3,16 @@ require_once('common.php');
 return array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
 	'name'=>'Console configuration',
-
+	'language'=>'ru',
 	// preloading 'log' component
 	'preload'=>array('log'),
 	'import'=>array(
-			'application.models.XlsFile',
-			'application.components.*'
+		'application.models.XlsFile',
+		'application.components.*',
+		'application.extensions.MongoYii.*',
+		'application.extensions.MongoYii.validators.*',
+		'application.extensions.MongoYii.behaviors.*',
+		'application.extensions.MongoYii.util.*'
 	),
 	// application components
 	'components'=>array(

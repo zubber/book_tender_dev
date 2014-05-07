@@ -1,14 +1,23 @@
 <?php 
-define('GENEXCEL_RET_SUCCESS', 1 );
+define('GENEXCEL_RET_SUCCESS', 3 );
 define('GENEXCEL_RET_ERR_NO_FILE', 2 );
+define('XLS_STAT_IN_QUEUE', 0 );
+define('XLS_STAT_BEGIN_PROCESSING', 1 );
+define('XLS_STAT_CREATE_XLS', 2 );
+define('XLS_STAT_SUCCESS', 3 );
+define('XLS_STAT_ERR_NO_FILE', 10 );
 require_once dirname(__FILE__).DIRECTORY_SEPARATOR.'../extensions/Kint/Kint.php';
-
 class params {
 	public static $params = array(
 		// this is used in contact page
 		'adminEmail'=>'zubran@gmail.com',
 		'databus' => array (
 			'redis' => array( 'host' => 'localhost', 'port' => 6379 ),
+		),
+		'mongodb' => array(
+		    'class' => 'EMongoClient',
+		    'db' => 'tender',
+			'RP' => array('RP_PRIMARY', array()),
 		),
 		// 		Наименование - поле name
 		// 		ISBN (Артикул) - поле isbnn

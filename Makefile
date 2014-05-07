@@ -19,7 +19,7 @@ upd_www:
 	cp -rf ${CUR_DIR}/var/www/yii /var/www/yii
 	
 upd_extensions:
-	if [ ! -d ${MYIIDIR} ]; then git clone https://github.com/Sammaye/MongoYii ${MYIIDIR}; fi
+	if [ ! -d ${MYIIDIR} ]; then git clone https://github.com/Sammaye/MongoYii ${MYIIDIR}; chown -R www:www ${MYIIDIR}; fi
 
 upd_dirs:
 	if [ ! -d ${TDIR} ]; then ln -s ${CUR_DIR}/var/www/tender ${TDIR}; fi
@@ -30,6 +30,7 @@ upd_dirs:
 restart:
 	service queue_manager restart
 	service stat_manager restart
+	service httpd restart
 	
 sphinx:
 	if [ ! -d ${SPHDIR} ]; then mkdir ${SPHDIR}; chown sphinx:sphinx ${SPHDIR}; fi	

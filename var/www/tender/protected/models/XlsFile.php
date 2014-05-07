@@ -50,40 +50,9 @@ class XlsFile extends CActiveRecord
 		$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
 		$mdb_xls = $mdb_conn->tender->stat_xls;
 		$xls_data = $mdb_xls->findOne( array( "xls_id" => (int)$id ) );
-// dd($id);		
-// 		$mdb_gb = $mdb_conn->tender->stat_gb;
-// 		$gb_data = $mdb_gb->findOne( array( "date" => date('Y-m-d') ) );
-		
 		$mdb_qm = $mdb_conn->tender->qm;
 		$qm_data = $mdb_qm->findOne( array( "x" => (int)$id ) );
 		
-// 		db.books.aggregate(
-// 		[
-// 		{$match:{xls_id:310}},
-// 		{ $group : { _id : "$xls_id", n : {$avg:"$search_results.best_percentage"} } }
-// 		]
-// 		);
-
-/*
-		$mdc_books = $mdb_conn->tender->books;
-		$match_stat = array(
-				array(
-						'$match' => array(
-								"xls_id" => (int)$id,
-						)
-				),
-				array(
-						'$group' => array(
-								"_id" => '$xls_id',
-								"avg_percentage" => array('$avg' => '$search_results.best_percentage'),
-						),
-				),
-		);
-		$results = $mdc_books->aggregate($match_stat);
-		$avg = "?";
-		if ( isset( $results ) && isset($results['result']) && isset( $results['result'][0] ) && isset( $results['result'][0]['avg_percentage'] ) )
-			$avg = round( $results['result'][0]['avg_percentage'], 2 )*100;
-*/
 		$avg = 0;
 		$ready_total = $xls_data['sphinx_stat']['f_0'] + $xls_data['sphinx_stat']['f_1'] + $xls_data['sphinx_stat']['f_2'];
 		if ( $ready_total > 0 )
@@ -92,12 +61,9 @@ class XlsFile extends CActiveRecord
 		$ret = array(
 			'xls_data'	=> $xls_data,
 			'qm_data'	=> $qm_data,
-// 			'gb_data'	=> $gb_data
 		);
 		return($ret);
-	}
-	
-	
+	}	
 	
 	/**
 	 * метод делает из монговской "плоскую" структуру для грида ( вариант для google books )
@@ -185,203 +151,6 @@ class XlsFile extends CActiveRecord
 		usort($gridData,"sort_by_row_num");
 		#dd($gridData);
 		return $gridData;
-	}
-	
-	
-	
-	
-	
-	/**
-	 * метод делает из монговской "плоскую" структуру для грида ( вариант для google books )
-	 * @param string $id
-	 * @param string $book_id
-	 * @return multitype:
-	 */
-	public function __getBooksData_old($id = false, $book_id = false, $isFirstBook = true )
-	{
-		if ( !$id )
-			$id = $this->id;
-		$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
-		$mdb_books = $mdb_conn->tender->books;
-		
-		$search = array( "xls_id" => (int)$id );
-		if ( isset( $book_id ) && $book_id > 0 )
-			$search['b_id'] = (int)$book_id;
-
-		$m_res = $mdb_books->find( $search );
-		$m_cnt = $mdb_books->count( $search );
-		$gridData = array();
-		#$m_res->limit(5000)->batchSize(5000);
-
-		foreach( $m_res as $book )
-		{
-			$book_data = array();
-			if ( isset( $book['items'] ) && count( $book['items'] ) > 0 )
-			{
-				if ( $book_id > 0 )
-				{ #dd($book['items']);
-					$counter = 1;
-					foreach( $book['items'] as $current_book )
-					{
-						$book_data = $this->_getGBData(
-							array_merge( array(
-								'id' => $book['b_id'].'_'.$counter,
-								'request' => isset( $book['request'] ) ? $book['request'] : '',
-								'isMore' => count( $book['items'] ) > 1 ? 1 : 0,
-							),
-							$current_book),
-							$book['name']
-						);
-						$counter++;
-						foreach ( $book_data as $b_data )
-							array_push( $gridData, array_merge( $b_data, array('row_num' => $book['row_num'])));
-						
-					} #dd($gridData);					
-					break;
-				}
-				else
-				{
-					$first_book = array_shift( $book['items'] );
-					$book_data = $this->_getGBData(
-						array_merge( array(
-							'id' => $book['b_id'],
-							'request' => isset( $book['request'] ) ? $book['request'] : '',
-							'isMore' => count( $book['items'] ) > 1 ? 1 : 0,
-						),
-						$first_book),
-						$book['name'],
-						$isFirstBook
-					);
-				}
-					
-			}
-			else
-			{
-				$book_data = array();
-				array_push( $book_data, array(
-						'id' => $book['b_id'],
-						'name' => $book['name'],
-						'request' => isset( $book['request'] ) ? $book['request'] : '',
-						'pageCount' => "-",
-						'canonicalVolumeLink' => '',
-						'publishedDate' => "-",
-						'selfLink' => "-",
-						'ind' => "-",
-						'authors' => "-",
-						'mk_reminder' => '-',
-						'mk_request' => false,
-						'mk_price' => "-",
-						'isMore' => 0,
-				));
-			}
-			foreach ( $book_data as $b_data )
-				array_push( $gridData, array_merge( $b_data, array('row_num' => $book['row_num'])));
-		}
-		return $gridData;
-		
-	}
-	
-	protected function _getGBData($book, $title, $isFirstBook = false)
-	{
-		$book_data = array(
-				'id' => $book['id'],
-				'request' => $book['request'],
-				'name'	=> $title,
-				'isMore' => $book['isMore']
-		); #dd($book);
-		$book_data['pageCount'] = isset( $book['pageCount'] ) ? $book['pageCount'] : '-' ;
-		$book_data['publisher'] = isset( $book['publisher'] ) ? $book['publisher'] : '-';
-		$book_data['publishedDate'] =  isset( $book['publishedDate'] ) ? $book['publishedDate'] : '-';
-		$book_data['selfLink'] =  isset( $book['selfLink'] ) ? $book['selfLink'] : false;
-		$book_data['canonicalVolumeLink'] =  isset( $book['canonicalVolumeLink'] ) ? $book['canonicalVolumeLink'] : false;
-
-		if ( isset( $book["authors"]) )
-		{
-			$book_data['authors'] = '';
-			foreach ( $book["authors"] as $author )
-				$book_data['authors'] .= ( $book_data['authors'] ? "," : "" ) .  $author;
-		}
-		else
-			$book_data['authors'] = '-';
-		
-		$return = array();
-		if ( isset( $book["industryIdentifiers"]) )
-		{
-			foreach ( $book["industryIdentifiers"] as $ind )
-			{
-				$isbn_data = array_merge( $book_data, array( 'ind' => $ind['type'] . ': ' . $ind["identifier"] ) );
-				if ( isset( $ind['MKData'] ) && isset( $ind['MKData']["s"] ) )
-				{
-					switch($ind['MKData']["s"])
-					{
-						case 20:
-							foreach ( Yii::app()->params['xls_fields'] as $fn => $fp )
-							{
-								switch($fn)		#Дополнительная обработка
-								{
-									case 'brgew':
-										$isbn_data[$fn] = (int)($ind['MKData'][$fn]*1000);
-										break;
-									default:
-										$isbn_data[$fn] = $ind['MKData'][$fn];
-										break;
-								}
-							}
-							foreach ( Yii::app()->params['xls_fields_calc'] as $fn => $fp )
-							{
-								switch($fn)		#вычисляемые поля
-								{
-									case 'isbn13':
-										$isbn_data[$fn] = $isbn_data['isbnn'];
-										break;
-									case 'ean13':
-										$isbn_data[$fn] = str_replace('-','',$isbn_data['isbnn']);
-										break;
-									case 'year_pub':
-										$isbn_data[$fn] = isset($isbn_data['ldate_d']) ? substr( $isbn_data['ldate_d'], 6, 4 ) : '';
-										break;
-								}
-							}
-							break;
-						case 22:
-							$isbn_data['price'] = "ошибка xml";
-							break;
-						case 23:
-						default:
-							$isbn_data['price'] = "";
-							break;
-									
-					}
-					$isbn_data['mk_request'] = $ind['MKData']['r'];
-				}
-				else # не-isbn типы
-				{
-					$isbn_data['mk_reminder'] = '';
-					$isbn_data['mk_price'] = "";
-					$isbn_data['mk_request'] = '';
-				}
-				
-				array_push($return,$isbn_data);
-			}
-			if ( $isFirstBook ) #нужно оставить только 1 результат ( релевантный ) 
-				array_shift($return);
-		}
-		
-		if ( !isset( $book["industryIdentifiers"]) || count( $return ) == 0 )
-		{
-			array_push($return, 
-				array_merge( 
-					array( 
-						'ind' => '-',
-						'mk_reminder' => '-',
-						'mk_price' => '-',
-						'mk_request' => '-',
-						'ind' => '-'
-					),
-				$book_data)
-			);
-		}
-		return $return;
 	}
 	
 	/**

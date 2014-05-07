@@ -80,6 +80,11 @@ $this->endProfile('total');
     	$data = json_decode($args[0], true);					#var_dump($data);
 		$this->log( "start processing ".$data['f'] );
 		$file = Yii::app()->params['xls_files']['processing']['path']."/".$data['i'];
+		
+    	$xls_model = XlsFile::model()->findByPk((int)$data['i']);
+    	$xls_model->status = XLS_STAT_BEGIN_PROCESSING;
+    	$xls_model->update();
+    	
 		$this->_importExcel($data['f'], (int)$data['i']);
 		rename($data['f'],$file);
 		$this->log( "end processing ".$file );

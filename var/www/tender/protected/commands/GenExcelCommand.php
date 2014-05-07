@@ -22,7 +22,7 @@ class GenExcelCommand extends TenderConsoleCommand
     	$proc_xls = Yii::app()->params['xls_files']['processing']['path'].'/'.$data['x'];
     	if (!file_exists($proc_xls) ) //fix если запускаем к уже обработанному файлу
     	{
-   			$this->complete(file_exists($new_xls)?GENEXCEL_RET_SUCCESS:GENEXCEL_RET_ERR_NO_FILE, $data);
+   			$this->complete(file_exists($new_xls)?XLS_STAT_SUCCESS:XLS_STAT_ERR_NO_FILE, $data);
    			exit();
     	}
 #    	$templ_xls = Yii::app()->params['xls_files']['template']['fullname'];
@@ -38,7 +38,7 @@ class GenExcelCommand extends TenderConsoleCommand
 		} catch( Exception $e)
 		{
 			$this->log( "ERROR: " .$e->getMessage() . " data: " . json_encode($args) );
-			$this->complete(GENEXCEL_RET_ERR_NO_FILE, $data);
+			$this->complete(XLS_STAT_ERR_NO_FILE, $data);
 			exit();
 		}
 		
@@ -81,11 +81,11 @@ class GenExcelCommand extends TenderConsoleCommand
 		$this->log( "end processing $new_xls" );
 		//Поскольку здесь есть модель файла, сохраним что он обработан
 
-		$this->complete(GENEXCEL_RET_SUCCESS, $data);
+		$this->complete(XLS_STAT_SUCCESS, $data);
 		return RET_OK;
     }
     
-    private function complete($status = GENEXCEL_RET_SUCCESS, &$data)
+    private function complete($status = XLS_STAT_SUCCESS, &$data)
     {
     	$xls_model = XlsFile::model()->findByPk((int)$data['x']);
     	$xls_model->end_date = date('Y-m-d H:i:s');
