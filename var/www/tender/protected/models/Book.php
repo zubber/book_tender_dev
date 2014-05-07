@@ -117,21 +117,29 @@ class Book extends EMongoDocument
 				foreach( $fields as $field_name => $field_params )
 				{
 					$field_value = "";
-					if (isset($bookInCatalog[$field_name] ) )
-					{
-						switch($field_params['type']) {
-							case "mkdict":
-								$dictName = $field_name;
-								if (!isset($dicts[$dictName]))
-									$dicts[$dictName] = array('name' => $field_params['id'], 'data' => array(), 'links' => array());
-								$dicts[$dictName]['data'][] =  $bookInCatalog[$field_name]; //значение xml_id
-								if (!isset($dicts[$dictName]['links'][$bookInCatalog[$field_name]]))
-									$dicts[$dictName]['links'][$bookInCatalog[$field_name]] = array();
-								$dicts[$dictName]['links'][$bookInCatalog[$field_name]][] = $bookInCatalog['_seq_id'];
-							default:
-								$field_value = $bookInCatalog[$field_name];
-						}
+					if ( is_array($bookInCatalog) && isset($bookInCatalog[$field_name]) && is_array($bookInCatalog[$field_name]) && count($bookInCatalog[$field_name] ))
+						$propValue = $bookInCatalog[$field_name][0];
+					elseif ( isset($bookInCatalog[$field_name] )) 
+						$propValue = $bookInCatalog[$field_name];
+					else 
+						continue;
+					
+					switch($field_params['type']) {
+						case "mkdict":
+							$dictName = $field_name;
+							
+							if (!isset($dicts[$dictName]))
+								$dicts[$dictName] = array('name' => $field_params['id'], 'data' => array(), 'links' => array());
+							
+							$dicts[$dictName]['data'][] =  $propValue; //значение xml_id
+							
+							if (!isset($dicts[$dictName]['links'][$propValue]))
+								$dicts[$dictName]['links'][$propValue] = array();
+							$dicts[$dictName]['links'][$propValue][] = $bookInCatalog['_seq_id'];
+						default:
+							$field_value = $propValue;
 					}
+					
 					
 					$book_data[$field_name] = $field_value;
 				}
