@@ -16,6 +16,7 @@ return array(
 	),
 	// application components
 	'components'=>array(
+		'mongodb' => params::$params['mongodb'],
 		'db'=>array(
 			'connectionString' => 'mysql:host=localhost;dbname=tender',
 			'emulatePrepare' => true,
