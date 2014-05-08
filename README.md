@@ -6,7 +6,7 @@ book_tender_dev
     mongodb v2.4.6
     redis  v2.6.14
     mysql  Ver 14.14 Distrib 5.5.33, for Linux (x86_64) using readline 5.1
-    PHP 5.5.3 (cli) (built: Aug 21 2013 18:12:49) ( http://176.99.159.150:8000/phpinfo.php )
+    PHP 5.5.3 (cli) (built: Aug 21 2013 18:12:49)
     обязательные модули ( ставилось из pear ):
     + redis 2.2.3
     + mongo 1.4.3

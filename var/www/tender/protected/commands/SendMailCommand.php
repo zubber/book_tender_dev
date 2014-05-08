@@ -31,9 +31,9 @@ class SendMailCommand extends CConsoleCommand
 		$xls_model = XlsFile::model()->findByPk( $xls_id );
 		$user_model = User::model()->findByPk( $xls_model->user_id );
 		$user_model->email;		
-		$dlink = "http://176.99.159.150:8000/tender/index.php?r=xlsFile/downloadFile&id={$arg_data['x']}";
-		$blink = "http://176.99.159.150:8000/tender/index.php?r=xlsFile/view_books&id={$arg_data['x']}";
-		$slink = "http://176.99.159.150:8000/tender/index.php?r=xlsFile/view&id={$arg_data['x']}";
+		$dlink = "http://bib.eksmo.ru/index.php?r=xlsFile/downloadFile&id={$arg_data['x']}";
+		$blink = "http://bib.eksmo.ru/index.php?r=xlsFile/view_books&id={$arg_data['x']}";
+		$slink = "http://bib.eksmo.ru/index.php?r=xlsFile/view&id={$arg_data['x']}";
 		$message = "Ссылка на скачивание файла: {$dlink}\nДанные книг по этому файлу: {$blink}\nСтатистика: {$slink}";
 		
 		// На случай если какая-то строка письма длиннее 70 символов мы используем wordwrap()

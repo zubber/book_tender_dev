@@ -66,7 +66,7 @@ class GenExcelCommand extends TenderConsoleCommand
 				
 				if ( $fn == 'name' && $row['isMore'] > 0 )
 				{
-					$objPHPExcel->getSheet()->getCell($cell)->getHyperlink()->setUrl("http://176.99.159.150:8000/tender/index.php?r=xlsFile/view_books&id={$data['x']}&book_id={$row['id']}");
+					$objPHPExcel->getSheet()->getCell($cell)->getHyperlink()->setUrl("http://bib.eksmo.ru/index.php?r=xlsFile/view_books&id={$data['x']}&book_id={$row['id']}");
 					$objPHPExcel->getSheet()->getStyle($cell)->applyFromArray($styleArray);
 					$objPHPExcel->getSheet()->getStyle($cell)->getFont()->getColor()->setRGB('00A2E8');
 				}
