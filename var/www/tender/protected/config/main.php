@@ -90,11 +90,11 @@ $params = array(
 					'class'=>'CWebLogRoute',
 				),
 				*/
-				array(
+/*				array(
 					'class'=>'CProfileLogRoute',
 					'report'=>'summary',
 				),
-			),
+*/			),
 		),
 		'cache' => array(
 				'class' => 'CApcCache',
