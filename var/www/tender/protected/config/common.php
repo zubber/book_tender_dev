@@ -75,8 +75,10 @@ class params {
 		),
 		'GBDayLimit'	=> 1000,
 		'BooksCatalog'	=> array(
-				'ast' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_ast" ),
-				'eksmo' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_full" ),
+// 				'ast' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_ast" ),
+// 				'eksmo' => array( 'url' => "http://partners.eksmo.ru/wservices/xml/?action=products_full" ),
+				'ast' => array( 'url' => "https://partners.eksmo.ru/wservices/xml/v1/?action=products_ast_full&key=41e5d8fc6146376a6d62f827bc540626" ),
+				'eksmo' => array( 'url' => "https://partners.eksmo.ru/wservices/xml/v1/?action=products_full&key=41e5d8fc6146376a6d62f827bc540626" ),				
 		)
 		
 	);
