@@ -78,35 +78,20 @@ class StatManager extends DataBus
 				break;
 */
 			case "SphinxCompleteRequest":
-// 				$obj		= "xls";
-// 				$op			= "update";
-// 				$criteria	= array( 'xls_id' => (int)$data['x'] );
-// 				$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
-// 				break;
 				
 				$query = array( 'x' => $xls_id );
-				$modify = array( '$inc' => array( 'sphinx_call' => -1 ) );
-				$projection = array( 'sphinx_call' => 1);
-				$qm_data = $this->_mdc_qm->findAndModify($query,$modify,$projection);
-				if ( $qm_data && $qm_data['sphinx_call'] <= 0 )
+				$qm_data = $this->_mdc_qm->findOne($query);
+				if ( $qm_data && $qm_data['rec'] <= $qm_data['sphinx_call'] + $qm_data['rec_empty'])
 				{
-					$this->_bus->triggerGenerateXLS(json_encode(array('x'=>$xls_id))); 
+					$this->triggerGenerateXLS(array('x'=>$xls_id)); 
 				}
 				$obj		= "xls";
 				$op			= "update";
-				$criteria	= array( 'xls_id' => (int)$data['x'] );
+				$criteria	= array( 'xls_id' => $xls_id );
 				$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
 				break;
 				
 				
-/*			
-			case "XlsComplete":
-				$obj		= "xls";
-				$op			= "update";
-				$criteria	= array( 'xls_id' => (int)$data['x'] );
-				$data		= array( '$set' => array('is_complete' => 1, 'edate' => time()));
-				break;
-*/
 		}
 
 		$mdc = $this->_mdb->selectCollection("stat_$obj");

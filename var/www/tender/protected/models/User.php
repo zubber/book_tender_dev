@@ -106,7 +106,7 @@ class User extends EMongoDocument
 	}
 
 	function beforeSave(){
-		$this->password=$this->hashPassword(); // lets hash that shiz
+//		$this->password=$this->hashPassword(); // lets hash that shiz
 		return parent::beforeSave();
 	}
 
@@ -132,5 +132,10 @@ class User extends EMongoDocument
 		$salt = '$2a$' . sprintf('%02d', $cost) . '$';
 		$salt .= strtr(substr(base64_encode($rand), 0, 22), array('+' => '.'));
 		return $salt;
+	}
+	
+	function findById($id) {
+	    $id = (int)$id;
+	    return $this->findOne(array('id' => $id));
 	}
 }

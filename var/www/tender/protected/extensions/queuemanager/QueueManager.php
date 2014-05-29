@@ -162,12 +162,12 @@ class QueueManager extends DataBus
            		{
 	           		$command = "sendmail '" . json_encode(array('x'=>$data['x'])) . "'";
 	           		$pid = $this->runCommand($command);
+           			$this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => 3 ) ) );
+           			$obj		= "xls";
+           			$op			= "update";
+           			$criteria	= array( 'xls_id' => (int)$data['x'] );
+           			$data		= array( '$set' => array('is_complete' => 3, 'edate' => time()));
            		}
-           		$this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => 1 ) ) );
-           		$obj		= "xls";
-           		$op			= "update";
-           		$criteria	= array( 'xls_id' => (int)$data['x'] );
-           		$data		= array( '$set' => array('is_complete' => 1, 'edate' => time()));
            		break;
            		
            	case "ProcessStack": 
@@ -181,11 +181,25 @@ class QueueManager extends DataBus
            		{
            			$x_id = $file_data['x'];
            			#для начала убедимся, что над найденными файлами ничего не совершалось в течение минуты
-           			if ( !($file_data['is_complete'] > 0 ) && time() - $file_data['ts_upd'] > 60 )
+           			$is_complete = $file_data['is_complete'];
+           			if ( $is_complete != 3 && time() - $file_data['ts_upd'] > 60 )
            			{
-         				$command = "genexcel '" . json_encode(array('x'=>$x_id)) . "'";
-         				$pid = $this->runCommand($command);
-         				$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
+           				if ($is_complete < 2) {
+         				    $command = "genexcel '" . json_encode(array('x'=>$x_id)) . "'";
+         				    $pid = $this->runCommand($command);
+         				    $is_complete = 2;
+         				    $this->_storage_save($x_id, array('$set'=>array('is_complete' => $is_complete)));
+         				}
+         				if ($is_complete == 2) {
+	           			    $command = "sendmail '" . json_encode(array('x'=>$data['x'])) . "'";
+	           			    $pid = $this->runCommand($command);
+	           			    $is_complete++;
+           				    $this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => $is_complete ) ) );
+			           	    $obj		= "xls";
+           				    $op			= "update";
+           				    $criteria	= array( 'xls_id' => (int)$data['x'] );
+           				    $data		= array( '$set' => array('is_complete' => $is_complete, 'edate' => time()));
+         				}
            			}
            		}
            		break;
@@ -203,11 +217,11 @@ class QueueManager extends DataBus
 //            		$criteria	= array( 'xls_id' => (int)$data['x'] );
 //            		$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
 //            		break;       
-           		case "GenerateXLS":
-           			$command = "genexcel '" . json_encode(array('x'=>$data['x'])) . "'";
-           			$pid = $this->runCommand($command);
-           			$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
-           			break;
+       		case "GenerateXLS":
+   			$command = "genexcel '" . json_encode(array('x'=>$xls_id)) . "'";
+       			$pid = $this->runCommand($command);
+       			$this->_storage_save($xls_id, array('$set'=>array('is_complete' => 2)));
+       			break;
 		}
 		$mdc = $this->_mdb->selectCollection("stat_$obj");
 		switch($op)

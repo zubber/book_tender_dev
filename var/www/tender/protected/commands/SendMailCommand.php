@@ -29,7 +29,7 @@ class SendMailCommand extends CConsoleCommand
 		$xls_id = $arg_data['x'];
 
 		$xls_model = XlsFile::model()->findByPk( $xls_id );
-		$user_model = User::model()->findByPk( $xls_model->user_id );
+		$user_model = User::model()->findById( $xls_model->user_id );
 		$user_model->email;		
 		$dlink = "http://bib.eksmo.ru/index.php?r=xlsFile/downloadFile&id={$arg_data['x']}";
 		$blink = "http://bib.eksmo.ru/index.php?r=xlsFile/view_books&id={$arg_data['x']}";

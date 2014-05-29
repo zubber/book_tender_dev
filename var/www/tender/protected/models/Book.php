@@ -67,7 +67,7 @@ class Book extends EMongoDocument
 	 * @return CActiveDataProvider the data provider that can return the models
 	 * based on the search/filter conditions.
 	 */
-	public function search($arSearch)
+	public function search($arSearch = Array(), $project = Array(), $partialMatch = false, $sort = Array())
 	{
 		$criteria = new EMongoCriteria;
 		if (isset($arSearch['xls_id']))
@@ -118,10 +118,10 @@ class Book extends EMongoDocument
 				{
 					$field_value = "";
 					if ( is_array($bookInCatalog) && isset($bookInCatalog[$field_name]) && is_array($bookInCatalog[$field_name]) ) {
-					    if (count($bookInCatalog[$field_name] ))
-						$propValue = $bookInCatalog[$field_name][0];
+					    if (count($bookInCatalog[$field_name] )) // && isset($bookInCatalog[$field_name][0])
+						@$propValue = $bookInCatalog[$field_name][0];
 					    else
-						continue;
+							continue;
 					} 
 					elseif ( isset($bookInCatalog[$field_name] )) 
 						$propValue = $bookInCatalog[$field_name];
