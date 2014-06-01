@@ -37,7 +37,7 @@ $this->menu=array(
 					'value'=> array($this,'indexGridStatus'), 
 					'header'=>'Статус'
 	   		),
-	    	array('name'=>'cr_date', 'header'=>'Загружен', 'type'=>'raw'),
+	    	array('name'=>'cr_date', 'header'=>'Загружен', 'type'=>'raw', 'value' => '$data->cr_date instanceof MongoDate ? date("Y-m-d H:i:s",$data->cr_date->sec) : $data->cr_date'),
 			array('name'=>'end_date', 'header'=>'Обработан', 'type'=>'raw'),
 //	    	array('name'=>'download', 'header'=>'Скачать', 'type'=>'raw'),
 	    ),
