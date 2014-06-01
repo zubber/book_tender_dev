@@ -47,14 +47,17 @@ class XlsFile2MongoCommand extends TenderConsoleCommand
     	$arDo = array('update'=>array(),'remove'=>array());
     	$m_cur = $mdb_conn->tender->books->find();
     	foreach($m_cur as $stat) {
-    		$criteria = array('xls_id' => $stat['xls_id']);
-    		if (!isset($arXls[$stat['xls_id']])) {
-    			$mdb_conn->tender->books->remove($criteria);
-				$arDo['remove'][] = $criteria;
-    		} else {
-    			$modify = array('xls_id' => $arXls[$stat['xls_id']]);
-				$arDo['update'][] = array('criteria' => $criteria, 'modify' => $modify);
-				$mdb_conn->tender->books->update($criteria,array('$set'=>$modify));
+    		if ($stat['xls_id'] && !($stat['xls_id'] instanceof MongoId)) {
+    			var_dump($stat['xls_id']);
+	    		$criteria = array('xls_id' => $stat['xls_id']);
+	    		if (!isset($arXls[$stat['xls_id']])) {
+	    			$mdb_conn->tender->books->remove($criteria);
+					$arDo['remove'][] = $criteria;
+	    		} else {
+	    			$modify = array('xls_id' => $arXls[$stat['xls_id']]);
+					$arDo['update'][] = array('criteria' => $criteria, 'modify' => $modify);
+					$mdb_conn->tender->books->update($criteria,array('$set'=>$modify));
+	    		}
     		}
     	}
     }
