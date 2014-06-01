@@ -1,7 +1,6 @@
 <?php
 	$xlsData = $statData['xls_data'];
 	$qmData = $statData['qm_data'];
-	if ( !isset($xlsData['is_complete'])) $xlsData['is_complete'] = 1;
 	if ( isset($xlsData['cdate']) && (int)$xlsData['cdate'] > 0) $xlsData['cdate'] = date('Y-m-d H:i:s',$xlsData['cdate']);
 	if ( isset($xlsData['edate']) && (int)$xlsData['edate'] > 0 ) $xlsData['edate'] = date('Y-m-d H:i:s',$xlsData['edate']);
 ?>
@@ -9,8 +8,8 @@
 <h5>Статистика обработки файла</h5>
 </div>
 <div style="float:left; width:50%; text-align: right;">
-<?php 
-if ( isset( $xlsData['is_complete'] ) && isset( $xlsData['xls_id']) && $xlsData['is_complete'] > 0 )
+<?php
+if ( isset( $qmData['is_complete'] ) && isset( $xlsData['xls_id']) && $qmData['is_complete'] > 1 && $xlsData['xls_id'] > 0 )
 {
 	$this->widget('bootstrap.widgets.TbButton', array(
 			'label'=>'Скачать обработанный файл',

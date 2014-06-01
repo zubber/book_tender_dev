@@ -123,4 +123,9 @@ class User extends EMongoDocument
 		$salt .= strtr(substr(base64_encode($rand), 0, 22), array('+' => '.'));
 		return $salt;
 	}
+	
+	function findById($id) {
+	    $id = (int)$id;
+	    return $this->findOne(array('id' => $id));
+	}
 }

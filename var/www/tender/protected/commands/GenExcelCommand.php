@@ -17,6 +17,7 @@ class GenExcelCommand extends TenderConsoleCommand
     
     public function run($args)
     {
+$this->beginProfile('run');
     	$data = json_decode($args[0], true);					#var_dump($data);
     	$new_xls = Yii::app()->params['xls_files']['done']['path'].'/'.$data['x'];
     	$proc_xls = Yii::app()->params['xls_files']['processing']['path'].'/'.$data['x'];
@@ -81,6 +82,7 @@ class GenExcelCommand extends TenderConsoleCommand
 		//Поскольку здесь есть модель файла, сохраним что он обработан
 
 		$this->complete(XLS_STAT_SUCCESS, $data);
+$this->endProfile('run');		
 		return RET_OK;
     }
     
