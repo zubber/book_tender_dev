@@ -59,7 +59,7 @@ $this->endProfile('_importExcel:row:findAndModifySeq');
     			'author'	=> $author,
     			'row_num'	=> $counter,
     			'count'		=> $count,
-    			'xls_id'	=> $xlsFileId,
+    			'xls_id'	=> new MongoId($xlsFileId),
     			'status'	=> 0	
     		);
     		
@@ -78,15 +78,17 @@ $this->endProfile('total');
     public function run($args)
     {
     	$data = json_decode($args[0], true);					#var_dump($data);
-		$this->log( "start processing ".$data['f'] );
-		$file = Yii::app()->params['xls_files']['processing']['path']."/".$data['i'];
+		$this->log( "start processing ".$data['x'] );
+		$pre_file = Yii::app()->params['xls_files']['uploaded']['path']."/".$data['x'];
 		
-    	$xls_model = XlsFile::model()->findByPk((int)$data['i']);
+		$file = Yii::app()->params['xls_files']['processing']['path']."/".$data['x'];
+		
+    	$xls_model = XlsFile::model()->findByPk($data['x']);
     	$xls_model->status = XLS_STAT_BEGIN_PROCESSING;
     	$xls_model->update();
     	
-		$this->_importExcel($data['f'], (int)$data['i']);
-		rename($data['f'],$file);
+		$this->_importExcel($pre_file,$data['x']);
+		rename($pre_file,$file);
 		$this->log( "end processing ".$file );
 		$this->afterAction();
 		return RET_OK;

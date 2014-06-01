@@ -69,16 +69,18 @@ class Book extends EMongoDocument
 	 */
 	public function search($arSearch)
 	{
-		$criteria = new EMongoCriteria;
+		$criteria = new EMongoCriteria; //sd(new MongoId($arSearch['xls_id']));
 		if (isset($arSearch['xls_id']))
-			$criteria->setCondition(array('xls_id' => (int)$arSearch['xls_id']));
+			$criteria->setCondition(array('xls_id' => new MongoId($arSearch['xls_id'])));
 		if($this->_id!==null)
 			$criteria->compare('_id', new MongoId($this->_id));
+		$criteria->setSort( array('_id'=>1));
 		$res = new EMongoDataProvider(get_class($this), array(
 			'criteria' => $criteria,
 			'pagination'=>array(
 		        'pageSize'=>50,
 		    ),
+			
 		));
 		return $res;
 	}

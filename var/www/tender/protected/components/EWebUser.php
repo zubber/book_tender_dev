@@ -7,6 +7,7 @@
 class EWebUser extends CWebUser{
 
     protected $_model;
+    public $_id;
 
     /**
      * Detects if the user is an admin

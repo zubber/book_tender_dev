@@ -10,7 +10,7 @@
 </div>
 <div style="float:left; width:50%; text-align: right;">
 <?php 
-if ( isset( $xlsData['is_complete'] ) && isset( $xlsData['xls_id']) && $xlsData['is_complete'] > 0 && $xlsData['xls_id'] > 0 )
+if ( isset( $xlsData['is_complete'] ) && isset( $xlsData['xls_id']) && $xlsData['is_complete'] > 0 )
 {
 	$this->widget('bootstrap.widgets.TbButton', array(
 			'label'=>'Скачать обработанный файл',
@@ -72,35 +72,4 @@ if ( isset( $xlsData['is_complete'] ) && isset( $xlsData['xls_id']) && $xlsData[
 				'template'=>"{items}",
 		));
 	}
-// 	array('name'=>'average_percentage', 'header'=>'Средний процент совпадений'),
-	
-?>
-
-
-<?php 
-/*
- * <h5>Статистика Медиа Каталога</h5>
-	$mkDataProvider = new CArrayDataProvider(array(array(
-		'id'=>1,
-		'mk_c'=>$xlsData['mk_stat']['c'],
-		'mk_c20'=>$xlsData['mk_stat']['c_20'],
-		'mk_c21'=>$xlsData['mk_stat']['c_21'],
-		'mk_c22'=>$xlsData['mk_stat']['c_22'],
-		'mk_c23'=>$xlsData['mk_stat']['c_23'],
-		'mk_c24'=>$xlsData['mk_stat']['c_24'],
-	)));
-	
-	$this->widget('bootstrap.widgets.TbGridView', array(
-			'type'=>'striped bordered condensed',
-			'dataProvider' => $mkDataProvider,
-			'columns'=>array(
-				array('name'=>'mk_c', 'header'=>'Запросов к Медиа Каталогу'),
-				array('name'=>'mk_c22', 'header'=>'	ошибок разбора xml:'),
-				array('name'=>'mk_c23', 'header'=>'	не найдена по isbn:'),
-				array('name'=>'mk_c24', 'header'=>'	только с 0 остатком:'),
-				array('name'=>'mk_c20', 'header'=>'	найдено:'),
-			),
-			'template'=>"{items}",
-	));
-*/	
 ?>

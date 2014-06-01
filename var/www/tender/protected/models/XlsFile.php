@@ -1,25 +1,14 @@
 <?php
 
-/**
- * This is the model class for table "tbl_xls_file".
- *
- * The followings are the available columns in table 'tbl_xls_file':
- * @property integer $id
- * @property string $user_id
- * @property integer $status
- * @property string $rec_count
- * @property string $orig_name
- * @property string $sys_name
- * @property string $cr_date
- */
-class XlsFile extends CActiveRecord
+class XlsFile extends EMongoDocument
 {
-	/**
-	 * @return string the associated database table name
-	 */
-	public function tableName()
+	public $_id;
+	public $orig_name;
+	public $user_id;
+	
+	public function collectionName()
 	{
-		return 'tbl_xls_file';
+		return 'xls_file';
 	}
 
 	/**
@@ -32,27 +21,39 @@ class XlsFile extends CActiveRecord
 		return array(
 			array('orig_name', 'required'),
 			array('status', 'numerical', 'integerOnly'=>true),
-			array('user_id', 'length', 'max'=>4),
+			array('user_id', 'EMongoIdValidator'),
 			array('rec_count', 'length', 'max'=>6),
 			array('orig_name', 'file', 'types' => 'xls,xlsx' ),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
-			array('id, user_id, status, rec_count, orig_name, cr_date', 'safe', 'on'=>'search'),
-			array('cr_date','default',
-					'value'=>new CDbExpression('NOW()'),
-					'setOnEmpty'=>false,'on'=>'insert'
-			)
+			array('id,_id, user_id, status, rec_count, orig_name, cr_date', 'safe', 'on'=>'search'),
+// 			array('cr_date','default',
+// 					'value'=>new CDbExpression('NOW()'),
+// 					'setOnEmpty'=>false,'on'=>'insert'
+// 			)
 		);
 	}
+	
+    public function beforeSave()
+    {
+        if (parent::beforeSave())
+        {
+            if ($this->isNewRecord)
+                $this->cr_date = new MongoDate();
+            return true;
+        } 
+        else
+            return false;
+    }
 
 	public function getStat($id)
 	{
+		$id = new MongoId($id);
 		$mdb_conn = new MongoClient( Yii::app()->params['mongo'] );
 		$mdb_xls = $mdb_conn->tender->stat_xls;
-		$xls_data = $mdb_xls->findOne( array( "xls_id" => (int)$id ) );
+		$xls_data = $mdb_xls->findOne( array( "xls_id" => $id ) );
 		$mdb_qm = $mdb_conn->tender->qm;
-		$qm_data = $mdb_qm->findOne( array( "x" => (int)$id ) );
-		
+		$qm_data = $mdb_qm->findOne( array( "x" => $id ) );
 		$avg = 0;
 		$ready_total = $xls_data['sphinx_stat']['f_0'] + $xls_data['sphinx_stat']['f_1'] + $xls_data['sphinx_stat']['f_2'];
 		if ( $ready_total > 0 )
@@ -79,7 +80,7 @@ class XlsFile extends CActiveRecord
 		$mdb_books = $mdb_conn->tender->books;
 		$mdb_books_catalog = $mdb_conn->tender->books_catalog;
 	
-		$search = array( "xls_id" => (int)$id );
+		$search = array( "xls_id" => $id );
 		if ( isset( $book_id ) && $book_id > 0 )
 			$search['b_id'] = (int)$book_id;
 	
@@ -183,7 +184,7 @@ class XlsFile extends CActiveRecord
 	public function attributeLabels()
 	{
 		return array(
-			'id' => 'ID',
+			'_id' => 'ID',
 			'user_id' => 'User',
 			'status' => 'Status',
 			'rec_count' => 'Rec Count',
@@ -192,33 +193,16 @@ class XlsFile extends CActiveRecord
 		);
 	}
 
-	/**
-	 * Retrieves a list of models based on the current search/filter conditions.
-	 *
-	 * Typical usecase:
-	 * - Initialize the model fields with values from filter form.
-	 * - Execute this method to get CActiveDataProvider instance which will filter
-	 * models according to data in model fields.
-	 * - Pass data provider to CGridView, CListView or any similar widget.
-	 *
-	 * @return CActiveDataProvider the data provider that can return the models
-	 * based on the search/filter conditions.
-	 */
-	public function search()
-	{
-		// @todo Please modify the following code to remove attributes that should not be searched.
-
-		$criteria=new CDbCriteria;
-
-		$criteria->compare('id',$this->id);
-		$criteria->compare('user_id',$this->user_id,true);
-		$criteria->compare('status',$this->status);
-		$criteria->compare('rec_count',$this->rec_count,true);
-		$criteria->compare('orig_name',$this->orig_name,true);
-		$criteria->compare('cr_date',$this->cr_date,true);
-
-		return new CActiveDataProvider($this, array(
-			'criteria'=>$criteria,
+	public function search($criteria)
+	{ sd($criteria);
+		if (!isset($criteria)) {
+			$criteria = new EMongoCriteria;
+	
+			if($this->_id!==null)
+				$criteria->compare('_id', new MongoId($this->_id));
+		}
+		return new EMongoDataProvider(get_class($this), array(
+				'criteria' => $criteria,
 		));
 	}
 

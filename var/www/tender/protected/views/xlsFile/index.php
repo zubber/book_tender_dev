@@ -13,7 +13,8 @@ $this->menu=array(
 
 <h1>Ваши файлы:</h1>
 
-<?php
+<?php 
+// sd($dataProvider);
 	$gridDataProvider = $dataProvider;
 	$sort = new CSort('XlsFile');
 	$sort->defaultOrder = 'cr_date DESC';
@@ -28,7 +29,7 @@ $this->menu=array(
 	        		'name'=>'orig_name', 
 	        		'header'=>'Название',
 	        		'type'=>'raw',
-	        		'value' => '"<a href=\'/index.php?r=xlsFile/view&id=". $data->id . "\'>$data->orig_name</a>"'
+	        		'value' => '"<a href=\'/index.php?r=xlsFile/view&id=". $data->_id . "\'>$data->orig_name</a>"'
 			),
     		array(
     				'name'  => 'status',

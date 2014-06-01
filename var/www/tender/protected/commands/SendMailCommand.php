@@ -26,7 +26,7 @@ class SendMailCommand extends CConsoleCommand
 		}
 		
 		$arg_data = json_decode($args[0],  true);
-		$xls_id = $arg_data['x'];
+		$xls_id = new MongoId($arg_data['x']);
 
 		$xls_model = XlsFile::model()->findByPk( $xls_id );
 		$user_model = User::model()->findByPk( $xls_model->user_id );

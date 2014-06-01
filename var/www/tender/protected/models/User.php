@@ -1,24 +1,25 @@
 <?php
 
-/**
- * This is the model class for table "tbl_user".
- *
- * The followings are the available columns in table 'tbl_user':
- * @property integer $id
- * @property string $username
- * @property string $password
- * @property string $email
- */
 class User extends EMongoDocument
 {
 	public $_id;
 	
-	/**
-	 * @return string the associated database table name
-	 */
 	public function collectionName()
 	{
 		return 'users';
+	}
+	
+	function relations(){
+		return array(
+			'xls_file' => array('many','XlsFile','user_id'),
+		);
+	}
+	
+	public function behaviors(){
+	  return array(
+  		'EMongoTimestampBehaviour' => array(
+  			'class' => 'EMongoTimestampBehaviour' // Adds a handy create_time and update_time
+  	  ));
 	}
 
 	/**
@@ -35,17 +36,6 @@ class User extends EMongoDocument
 			// @todo Please remove those attributes that should not be searched.
 			array('_id, username, password, email', 'safe', 'on'=>'search'),
 			array('password', 'safe', 'on'=>'update'),
-		);
-	}
-
-	/**
-	 * @return array relational rules.
-	 */
-	public function relations()
-	{
-		// NOTE: you may need to adjust the relation name and the related
-		// class name for the relations automatically generated below.
-		return array(
 		);
 	}
 
@@ -82,7 +72,7 @@ class User extends EMongoDocument
 			$criteria->compare('_id', new MongoId($this->_id));
 		//$criteria->compare('__v', $this->__v);
 		return new EMongoDataProvider(get_class($this), array(
-				'criteria' => $criteria,
+			'criteria' => $criteria,
 		));
 	}
 
@@ -106,7 +96,7 @@ class User extends EMongoDocument
 	}
 
 	function beforeSave(){
-		$this->password=$this->hashPassword(); // lets hash that shiz
+		//$this->password=$this->hashPassword(); // lets hash that shiz
 		return parent::beforeSave();
 	}
 

@@ -25,7 +25,6 @@ class QueueManager extends DataBus
 			"XlsRecordEmpty",
 			"XlsComplete",
 			"ProcessStack",
-// 			"SphinxCompleteRequest",
 			"GenerateXLS"
 			), array( $this, 'onEvent' ));
 	}
@@ -61,7 +60,7 @@ class QueueManager extends DataBus
 	 */
 	private function _storage_save($xls_id, $data = array())
 	{
-		$this->_mdc_qm->update( array( 'x' => (int)$xls_id ), $data);
+		$this->_mdc_qm->update( array( 'x' => new MongoId($xls_id) ), $data);
 		$this->_ts_update($xls_id);
 	}
 	
@@ -71,7 +70,7 @@ class QueueManager extends DataBus
 	 */
 	private function _storage_erase($xls_id = 0)
 	{
-		$this->_mdc_qm->remove( array( 'x' => (int)$xls_id ), array('justOne' => true) );
+		$this->_mdc_qm->remove( array( 'x' => new MongoId($xls_id)), array('justOne' => true) );
 	}
 	
 	/**
@@ -80,7 +79,7 @@ class QueueManager extends DataBus
 	 */
 	private function _ts_update($xls_id = 0)
 	{
-		$this->_mdc_qm->update( array( 'x' => (int)$xls_id ), array( '$set' => array( 'ts_upd' => time() ) ) );
+		$this->_mdc_qm->update( array( 'x' => new MongoId($xls_id) ), array( '$set' => array( 'ts_upd' => time() ) ) );
 	}
 	
 	/**
@@ -99,7 +98,7 @@ class QueueManager extends DataBus
 				$obj		= "xls";
 				$op 		= "insert";
 				$data 		= array(
-						"xls_id" 		=> (int)$data['i'],
+						"xls_id" 		=> new MongoId($data['x']),
 						"rows_total" 	=> 0,
 						"rows_empty" 	=> 0,
 						"rows_tasked" => 0,
@@ -122,7 +121,7 @@ class QueueManager extends DataBus
 
 			case "XlsGetRecordCount":
 				$new_xls = array( 
-					'x' => (int)$xls_id,
+					'x' => new MongoId($xls_id),
 					'rec' => (int)$data['c'],
 					'rec_empty' => 0,
 					'begin' => time(),
@@ -132,14 +131,14 @@ class QueueManager extends DataBus
 				
 				$obj		= "xls";
 				$op			= "update";
-				$criteria	= array( "xls_id" => (int)$data['x'] );
+				$criteria	= array( "xls_id" => new MongoId($data['x']) );
 				$data 		= array( '$set' => array( "rows_total" 	=> (int)$data['c'] ) );
 				break;
 				
 			case "XlsRecordEmpty":
 				$obj		= "xls";
 				$op			= "update";
-				$criteria	= array( "xls_id" => (int)$data['x'] );
+				$criteria	= array( "xls_id" => new MongoId($data['x']) );
 				$data 		= array( '$inc' => array( "rows_empty" 	=> 1 ) );
 				
 				$this->_storage_save($xls_id,array( '$inc' => array( 'rec_empty' => 1 ) ) );
@@ -152,7 +151,7 @@ class QueueManager extends DataBus
            		
            		$obj		= "xls";
            		$op			= "update";
-           		$criteria	= array( 'xls_id' => (int)$data['x'] );
+           		$criteria	= array( 'xls_id' => new MongoId($data['x']) );
            		$data 		= array( '$inc' => array( "rows_tasked" => 1 ) );
            		break;
 
@@ -166,7 +165,7 @@ class QueueManager extends DataBus
            		$this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => 1 ) ) );
            		$obj		= "xls";
            		$op			= "update";
-           		$criteria	= array( 'xls_id' => (int)$data['x'] );
+           		$criteria	= array( 'xls_id' => new MongoId($data['x']) );
            		$data		= array( '$set' => array('is_complete' => 1, 'edate' => time()));
            		break;
            		
@@ -183,31 +182,18 @@ class QueueManager extends DataBus
            			#для начала убедимся, что над найденными файлами ничего не совершалось в течение минуты
            			if ( !($file_data['is_complete'] > 0 ) && time() - $file_data['ts_upd'] > 60 )
            			{
-         				$command = "genexcel '" . json_encode(array('x'=>$x_id)) . "'";
+         				$command = "genexcel '" . json_encode(array('x'=>(string)$x_id)) . "'";
          				$pid = $this->runCommand($command);
          				$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
            			}
            		}
            		break;
            		
-//            	case "SphinxCompleteRequest":
-//            		$this->_storage_save( $xls_id, array( '$inc' => array( 'sphinx_call' => -1 ) ) );
-//            		$qm_data = $this->_mdc_qm->findOne(array( 'x' => (int)$xls_id ));
-//            		if ( $qm_data && $qm_data['sphinx_call'] <= 0 )
-//            		{
-//            			$command = "genexcel '" . json_encode(array('x'=>$data['x'])) . "'";
-//            			$pid = $this->runCommand($command);
-//            		}
-//            		$obj		= "xls";
-//            		$op			= "update";
-//            		$criteria	= array( 'xls_id' => (int)$data['x'] );
-//            		$data 		= array( '$inc' => array("sphinx_stat.c" => 1, "sphinx_stat.c_".$data['s'] => 1, "sphinx_stat.f_".$data['f'] => 1 ));
-//            		break;       
-           		case "GenerateXLS":
-           			$command = "genexcel '" . json_encode(array('x'=>$data['x'])) . "'";
-           			$pid = $this->runCommand($command);
-           			$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
-           			break;
+           	case "GenerateXLS":
+           		$command = "genexcel '" . json_encode(array('x'=>$data['x'])) . "'";
+           		$pid = $this->runCommand($command);
+           		$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
+           		break;
 		}
 		$mdc = $this->_mdb->selectCollection("stat_$obj");
 		switch($op)

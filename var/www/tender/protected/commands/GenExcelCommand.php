@@ -25,14 +25,13 @@ class GenExcelCommand extends TenderConsoleCommand
    			$this->complete(file_exists($new_xls)?XLS_STAT_SUCCESS:XLS_STAT_ERR_NO_FILE, $data);
    			exit();
     	}
-#    	$templ_xls = Yii::app()->params['xls_files']['template']['fullname'];
 		$this->log( "start processing $new_xls" );
-		$model = XlsFile::model()->getBooksData((int)$data['x']);
+		$model = XlsFile::model()->getBooksData(new MongoId($data['x']));
 		
 		require_once dirname(__FILE__).'/../vendors/PHPExcel/PHPExcel.php';
 		require_once dirname(__FILE__).'/../vendors/PHPExcel/PHPExcel/Autoloader.php';
+
 		Yii::registerAutoloader(array('PHPExcel_Autoloader','Load'), true);
-#var_dump($model);die;
 		try {
 			$objPHPExcel = PHPExcel_IOFactory::load($proc_xls);
 		} catch( Exception $e)
@@ -87,7 +86,7 @@ class GenExcelCommand extends TenderConsoleCommand
     
     private function complete($status = XLS_STAT_SUCCESS, &$data)
     {
-    	$xls_model = XlsFile::model()->findByPk((int)$data['x']);
+    	$xls_model = XlsFile::model()->findByPk(new MongoId($data['x']));
     	$xls_model->end_date = date('Y-m-d H:i:s');
     	$xls_model->status = $status;
     	$xls_model->update();

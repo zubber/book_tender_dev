@@ -51,7 +51,7 @@ class XlsFileController extends Controller
 
 	public function checkAuthorized($user_id = false, $params=array())
 	{
-		if( ( $user_id === false && Yii::app()->user->isGuest ) || ( $user_id > 0 && Yii::app()->user->id != $user_id) )
+		if( ( $user_id === false && Yii::app()->user->isGuest ) || ( $user_id && Yii::app()->user->id != $user_id) )
 		{
 			$this->redirect(array('site/login'));
 		}
@@ -64,17 +64,17 @@ class XlsFileController extends Controller
 	{
 Yii::beginProfile('actionIndex');
 		$this->checkAuthorized();
-Yii::beginProfile('model');
-		$dataProvider=new CActiveDataProvider('XlsFile',array(
-				'criteria'=>array(
-						'condition'=>'user_id='.Yii::app()->user->id,
-						'order'=>'cr_date DESC',
-				)
+Yii::beginProfile('model'); //sd(Yii::app()->user);
+		$condition = array('user_id' => new MongoId(Yii::app()->user->id));//sd($condition);
+		$dataProvider=new EMongoDataProvider('XlsFile',array(
+		    'criteria' => array(
+		        'condition' => $condition,
+		        'sort' => array('cr_date' => -1),
+		    ),
 		));
+		$model=new XlsFile('search');
 Yii::endProfile('model');
-		$this->render('index',array(
-				'dataProvider'=>$dataProvider,
-		));
+		$this->render('index',array('model'=>$model,'dataProvider'=>$dataProvider));
 Yii::endProfile('actionIndex');
 	}
 	
@@ -87,9 +87,8 @@ Yii::endProfile('actionIndex');
 		$model = $this->loadModel($id);
 		$this->checkAuthorized($model->user_id);
 		$statData = $model->getStat($id);
-// dd($statData);
 		
-		$this->globalVars = "var xlsFile = $id;";
+		$this->globalVars = "var xlsFile = '$id';";
 		$this->onloadScript = "updateStatTimer();";
 		$this->menu = $this->drawMenu('view', $model);
 		$this->render('view',array(
@@ -102,7 +101,7 @@ Yii::endProfile('actionIndex');
 	{
 		$model = $this->loadModel($id);
 		$this->checkAuthorized($model->user_id);
-		$booksData = Book::model()->search(array('xls_id' => $id));
+		$booksData = Book::model()->search(array('xls_id' => new MongoId($id)));//sd($booksData);
 		$booksCatalogData = Book::model()->getBooksInfo($booksData->getData());
 		$this->render('view_books',array(
 			'model' => $model,
@@ -114,7 +113,8 @@ Yii::endProfile('actionIndex');
 	public function actionDownloadFile($id)
 	{
 		$this->checkAuthorized();
-		$file_name = $id.'.xlsx';
+		$model = $this->loadModel(new MongoId($id));
+		$file_name = $model->orig_name;
 		$full_name = Yii::app()->params['xls_files']['done']['path'] . "/$id";
 		header('Content-Transfer-Encoding: binary');
 		header('Content-Type: application/vnd.ms-excel');
@@ -134,33 +134,32 @@ Yii::endProfile('actionIndex');
 		$this->checkAuthorized();
 		$model=new XlsFile;
 
-		// Uncomment the following line if AJAX validation is needed
-		// $this->performAjaxValidation($model);
-
 		$status = false;
-		if(isset($_POST['XlsFile']))
+		if(isset($_POST) && isset($_POST['XlsFile']))
 		{
-			$model->attributes=$_POST['XlsFile'];
-			$model->user_id = Yii::app()->user->id;
-			$model->orig_name=CUploadedFile::getInstance($model,'orig_name');
-			$sys_file = CUploadedFile::getInstance($model,'orig_name');
-			if($model->save())
-			{
-				$sys_name = Yii::app()->params['xls_files']['uploaded']['path']."/".$model->id;
-				$sys_file->saveAs($sys_name);
-				$bus = new DataBus(Yii::app()->params);
-				$msg_data = array( 'f' => $sys_name, 'i' => $model->id );
-				if ( $bus->triggerXlsUpload( $msg_data ) )
-				{
-					$this->redirect(array('view','id'=>$model->id));
+			$model->user_id = new MongoId(Yii::app()->user->id);
+			$file=CUploadedFile::getInstance($model,'orig_name');
+			if($file && !$file->getHasError()) {
+				$model->orig_name=$file->getName(); 
+				if($model->validate()) 
+				{ 
+					$model->insert();
+					$sys_name = Yii::app()->params['xls_files']['uploaded']['path']."/".$model->_id; //dd($sys_name);
+					$file->saveAs($sys_name);
+					$bus = new DataBus(Yii::app()->params);
+					$msg_data = array( 'x' => (string)$model->_id );
+					if ( $bus->triggerXlsUpload( $msg_data ) )
+					{
+						$this->redirect(array('view','id'=>$model->_id));
+					}
+					else
+					{
+						$status = array( 'text' => 'Ошибка оединения с шиной данных. Пожалуйста, свяжитесь с технической поддержкой.', 'class' => 'error' );
+					}
 				}
 				else
-				{
-					$status = array( 'text' => 'Ошибка коммуникации с шиной данных. Пожалуйста, свяжитесь с технической поддержкой.', 'class' => 'error' );
-				}
+					$status = array( 'text' => 'Ошибка сохранения "'. $model->orig_name . '"', 'class' => 'error' );
 			}
-			else
-				$status = array( 'text' => 'Ошибка сохранения "'. $model->orig_name . '"', 'class' => 'error' );
 		}
 
 		$this->render('create',array(
@@ -171,12 +170,12 @@ Yii::endProfile('actionIndex');
 
 	public function actionAjaxUpdateStat()
 	{
-		$id = (int)Yii::app()->request->getQuery('xls_file'); //dd(XlsFile::model());
-		if( !($id > 0)) exit( print( json_encode( array('errorText' => 'xls_file is not number' ))));
+		$id =Yii::app()->request->getQuery('xls_file'); //dd(XlsFile::model());
+		if(!$id) exit( print( json_encode( array('errorText' => 'xls_file not passed' ))));
+		$id = new MongoId($id);
 		$owner_id = XlsFile::model()->findByPk($id)->user_id;
 		$this->checkAuthorized($owner_id,array('js'=>true));
 		$statData = XlsFile::model()->getStat($id);
-// dd($statData);		
 		$this->renderPartial('_ajaxUpdateStat', array( 'statData' => $statData ), false, true);
 	}
 	
@@ -224,13 +223,13 @@ Yii::endProfile('actionIndex');
 	
 	public function drawMenu($view_name, $model)
 	{
-		$comp_file = XlsFile::model()->getCompletedFile($model->id);
+		$comp_file = XlsFile::model()->getCompletedFile($model->_id);
 		switch ($view_name)
 		{
 			case 'view':
-				$menu = array( array('label'=>'Данные книг из этого файла', 'url'=>array('view_books&id='. $model->id),) );
+				$menu = array( array('label'=>'Данные книг из этого файла', 'url'=>array('view_books&id='. $model->_id),) );
 				if ( $comp_file )
-					array_push( $menu, array('label'=>'Скачать обработанный файл', 'url'=>array('downloadFile&id='. $model->id),) );
+					array_push( $menu, array('label'=>'Скачать обработанный файл', 'url'=>array('downloadFile&id='. $model->_id),) );
 				array_push( $menu, array('label'=>'Вывести список загруженных файлов', 'url'=>array('index') ) );
 				break;
 		}
