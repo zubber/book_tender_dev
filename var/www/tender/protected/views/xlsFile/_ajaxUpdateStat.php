@@ -9,7 +9,7 @@
 </div>
 <div style="float:left; width:50%; text-align: right;">
 <?php
-if ( isset( $qmData['is_complete'] ) && isset( $xlsData['xls_id']) && $qmData['is_complete'] > 1 && $xlsData['xls_id'] > 0 )
+if ( isset( $qmData['is_complete'] ) && isset( $xlsData['xls_id']) && $qmData['is_complete'] > 1 && $xlsData['xls_id'] )
 {
 	$this->widget('bootstrap.widgets.TbButton', array(
 			'label'=>'Скачать обработанный файл',

@@ -23,7 +23,6 @@ class StatManager extends DataBus
 	
 	public function onEvent( $redis, $chan, $msg )
 	{
-
 		$data = json_decode($msg, true);
 		$xls_id = new MongoId($data['x']);
 		switch($chan)

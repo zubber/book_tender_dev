@@ -155,23 +155,17 @@ class QueueManager extends DataBus
            		$data 		= array( '$inc' => array( "rows_tasked" => 1 ) );
            		break;
 
-           		
            	case "XlsComplete":
            		if ( $data['s'] == GENEXCEL_RET_SUCCESS ) 
            		{
 	           		$command = "sendmail '" . json_encode(array('x'=>$data['x'])) . "'";
 	           		$pid = $this->runCommand($command);
-           			$this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => 3 ) ) );
+           			$this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => GENEXCEL_RET_SUCCESS ) ) );
            			$obj		= "xls";
            			$op			= "update";
-           			$criteria	= array( 'xls_id' => (int)$data['x'] );
-           			$data		= array( '$set' => array('is_complete' => 3, 'edate' => time()));
+           			$criteria	= array( 'xls_id' =>  new MongoId($data['x']) );
+           			$data		= array( '$set' => array('is_complete' => GENEXCEL_RET_SUCCESS, 'edate' => time()));
            		}
-           		$this->_storage_save($data['x'], array( '$set' => array( 'is_complete' => 1 ) ) );
-           		$obj		= "xls";
-           		$op			= "update";
-           		$criteria	= array( 'xls_id' => new MongoId($data['x']) );
-           		$data		= array( '$set' => array('is_complete' => 1, 'edate' => time()));
            		break;
            		
            	case "ProcessStack": 
@@ -188,9 +182,22 @@ class QueueManager extends DataBus
            			$is_complete = $file_data['is_complete'];
            			if ( $is_complete != 3 && time() - $file_data['ts_upd'] > 60 )
            			{
-         				$command = "genexcel '" . json_encode(array('x'=>(string)$x_id)) . "'";
-         				$pid = $this->runCommand($command);
-         				$this->_storage_save($x_id, array('$set'=>array('is_complete' => 1)));
+						if ($is_complete < 2) {
+         				    $command = "genexcel '" . json_encode(array('x'=>(string)$x_id)) . "'";
+         				    $pid = $this->runCommand($command);
+         				    $is_complete = 2;
+         				    $this->_storage_save($x_id, array('$set'=>array('is_complete' => $is_complete)));
+         				}
+         				if ($is_complete == 2) {
+	           			    $command = "sendmail '" . json_encode(array('x'=>(string)$x_id)) . "'";
+	           			    $pid = $this->runCommand($command);
+	           			    $is_complete++;
+           				    $this->_storage_save($x_id, array( '$set' => array( 'is_complete' => $is_complete ) ) );
+			           	    $obj		= "xls";
+           				    $op			= "update";
+           				    $criteria	= array( 'xls_id' => $x_id );
+           				    $data		= array( '$set' => array('is_complete' => $is_complete, 'edate' => time()));
+         				}
            			}
            		}
            		break;

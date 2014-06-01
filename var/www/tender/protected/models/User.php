@@ -125,7 +125,6 @@ class User extends EMongoDocument
 	}
 	
 	function findById($id) {
-	    $id = (int)$id;
-	    return $this->findOne(array('id' => $id));
+	    return $this->findOne(array('_id' => $id));
 	}
 }
