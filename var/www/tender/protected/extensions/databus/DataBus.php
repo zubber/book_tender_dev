@@ -11,6 +11,9 @@
 		private 	$_config 	= false;
 		private 	$_rh		= false;
 		protected 	$_mdb		= false;
+		protected	$_redis_server = false;
+		protected	$_redis_port = false;
+		protected	$_redis_reconnect_num = 0;
 		
 		function __construct($config = false, $is_daemon = false )
 		{
@@ -22,17 +25,36 @@
 			else
 				$this->_config = $config;
 			$this->is_daemon = $is_daemon;
-			$this->_rh = new Redis();
+			$this->_redis_server = 'localhost'; //TODO:из конфига
+			$this->_redis_port = 6379;
+			$isRedisAbsent = false;
+			while(!$this->redis_connect()) {
 				
-			#if ( ! $this->_rh->pconnect( $this->_config['redis']['host'], $this->_config['redis']['port'] ) )
-			if ( ! $this->_rh->pconnect( 'localhost', 6379, 60*60*24*180 ) )
-			{
-				$this->log( "error connect to redis (" . $this->_config['redis']['host'] . ", " . $this->_config['redis']['port'] . ")" );
-				$this->_rh = false;
-				return false;
+				if (!$isRedisAbsent) {
+					$this->logAndMail('redis went away');
+				}
+				else 
+					$this->log( "recconect try {$this->_redis_reconnect_num}" );
+				sleep($this->_redis_reconnect_num == 0 ? 3 : $this->_redis_reconnect_num > 5 ? 30 : 300);
+				$isRedisAbsent = true;
+				$this->_redis_reconnect_num++;
 			}
 			$mdb_conn = new MongoClient( $this->_config['mongo'] );
 			$this->_mdb = $mdb_conn->tender;
+		}
+		
+		protected function redis_connect() {
+			$this->_rh = new Redis();
+			if ( !$this->_rh || !$this->_rh->pconnect($this->_redis_server,$this->_redis_port,60*60*24*180 ) )
+			{
+				$this->log( "error connect to redis (" . $this->_redis_server . ":" . $this->_redis_port . ")" );
+				$this->_rh = false;
+				return false;
+			}
+			if ($this->_redis_reconnect_num > 0)
+				$this->logAndMail('redis connection restored');
+			$this->_redis_reconnect_num = 0;
+			return true;
 		}
 		
 		protected function subscribe(array $channel,$callback)
@@ -68,6 +90,15 @@
 			
 		protected function log($msg)
 		{
+			if ( $this->is_daemon )
+				System_Daemon::log(System_Daemon::LOG_INFO, get_class($this).': '.$msg );
+			else
+				error_log(get_class($this).': '.$msg);
+		}
+		
+		protected function logAndMail($msg,$body = false)
+		{
+			mail('t.b.e.adm@gmail.com', $msg, $body ? $body : '');
 			if ( $this->is_daemon )
 				System_Daemon::log(System_Daemon::LOG_INFO, get_class($this).': '.$msg );
 			else
