@@ -276,17 +276,30 @@ if ($this->is_debug == 1) var_dump($m_book['name']);
  					array_push( $seq_ids, (int)$seq_id );
 				}
 				
-				if ( count( $matches ))
+				if ( count( $matches ) > 1)
 				{
-					//Сортируем по весу
-					usort($matches,"sort_by_weight");
+					//Сортируем по весу, издательству, переплету, дате последнего тиража
+					
 						
+					$mdb_bc = $mdb_conn->tender->books_catalog;
+					$query = array( "_seq_id" => array( '$in' => $seq_ids ) );
+					$projection = array( "name" => true, "price_authors" => true, "xml_id" => true, "_seq_id" => true, "cover" => true, "ldate_d" => true, 'publi' => 1 );
+					$m_cur = $mdb_bc->find($query, $projection);
+					
+					foreach( $m_cur as $find_book)
+						for( $m = 0; $m < count($matches); $m++ )
+							if ( $matches[$m]['_seq_id'] == $find_book['_seq_id'] )
+								$matches[$m] = array_merge( $find_book,$matches[$m]);
+// var_dump($matches);
+					usort($matches,"sort_by");usort($matches,"sort_by");usort($matches,"sort_by");
+// var_dump("==========");
+// var_dump($matches);					
 					$data = array(
-							"search_results" => array (
-									"matches" 	=> $matches,
-									"best_percentage" => $matches[0]["percentage"],
-									"count"		=> count($matches)
-							)
+						"search_results" => array (
+							"matches" 	=> $matches,
+							"best_percentage" => $matches[0]["percentage"],
+							"count"		=> count($matches)
+						)
 					);
 					$status = 11;
 				}
@@ -294,33 +307,11 @@ if ($this->is_debug == 1) var_dump($m_book['name']);
 $this->endProfile('searchInSphinxAllQueries');
 		}
 		
-		if ( !count( $matches ) )
+		if ( !count( $matches ) ) {
 			$data = array( "search_results"	=> array( "count" => 0 ) );
-		
-		
-
-		if ($this->is_debug == 1) {
-			if ( count( $matches ) )
-			{
-				$mdb_bc = $mdb_conn->tender->books_catalog;
-				$query = array( "_seq_id" => array( '$in' => $seq_ids ) );
-				$projection = array( "name" => true, "price_authors" => true, "xml_id" => true, "_seq_id" => true );
-				$m_cur = $mdb_bc->find($query, $projection);
-				
-				foreach( $m_cur as $find_book)
-					for( $m = 0; $m < count($matches); $m++ )
-						if ( $matches[$m]['_seq_id'] == $find_book['_seq_id'] )
-							$matches[$m] = array_merge( $find_book,$matches[$m]);
-				var_dump($matches);
-			}
-			else 
-				$this->log("no matches found.");
-
-// 			var_dump($this->_sph);
-			$this->afterAction();
-			exit();
+			$this->log("no matches found.");
 		}
-		
+
 		$mdb_books = $mdb_conn->tender->books;
 		$mdb_books->update( array("b_id" => (int)$book_id), array('$set' => $data ) );
 		$arg_data['s'] = $status;
@@ -331,16 +322,33 @@ $this->endProfile('total');
 		return RET_OK;
 	}
 	
-// 	public function log($msg)
-// 	{
-// 		if ( $this->is_debug > 0 )	print($this->book_id.": {$msg}\n");
-// 	}
 }
 
-function sort_by_weight($a, $b)
+function sort_by($a, $b)
 {
-	if ($a['weight'] == $b['weight']) {
-		return 0;
+	$arSrtPubli = array('8-0001');
+	$arSrtCover = array('6-0002', '6-0003', '6-0004');
+
+	$cmpWH = $a['weight'] > $b['weight'];
+	$cmpPH = $a['publi'] && $b['publi'] && in_array($a['publi'],$arSrtPubli) && !in_array($b['publi'],$arSrtPubli);
+	$cmpCH = $a['cover'] && $b['cover'] && in_array($a['cover'],$arSrtCover) && !in_array($b['cover'],$arSrtCover);
+	$cmpLH = $a['ldate_d'] && $b['ldate_d'] && strtotime($a['ldate_d']) > strtotime($b['ldate_d']);
+	
+	$cmpWEq = $a['weight'] == $b['weight'];
+	$cmpPEq = $a['publi'] && $b['publi'] && in_array($a['publi'],$arSrtPubli) && in_array($b['publi'],$arSrtPubli);
+	$cmpCEq = $a['cover'] && $b['cover'] && in_array($a['cover'],$arSrtCover) && in_array($b['cover'],$arSrtCover);
+
+	
+	if ( 
+		$cmpWH
+		|| ($cmpWEq && $cmpPH) 
+		|| ($cmpWEq && $cmpPEq && $cmpCH) 
+		|| ($cmpWEq && $cmpPEq && $cmpCEq && $cmpLH) 
+	) {
+// 		var_dump($a['ldate_d'],$b['ldate_d'],strtotime($a['ldate_d']),strtotime($b['ldate_d']),"a>b");
+		return -1;
 	}
-	return ($a['weight'] > $b['weight']) ? -1 : 1;
+	elseif (!($cmpWH && $cmpWEq) || !($cmpPH && $cmpPEq) || !($cmpCH && $cmpCEq) || !$cmpLH)
+		return 1; 
+	return 0;
 }
