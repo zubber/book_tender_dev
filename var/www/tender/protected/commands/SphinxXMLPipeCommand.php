@@ -27,7 +27,7 @@ class SphinxXMLPipeCommand extends CConsoleCommand
 	</sphinx:schema>'.PHP_EOL;
 		foreach( $m_cur as $book)
 		{
-			if (!isset($book['_seq_id']) || !isset($book['name'])) continue;
+			if (!isset($book['_seq_id']) || !isset($book['name']) || !is_string($book['name'])) continue;
 			print '<sphinx:document id="'.$book['_seq_id'].'">'.PHP_EOL;
 			print '	<name><![CDATA[['.$book['name'].']]></name>'.PHP_EOL;
 			if ( isset($book['price_authors']) && is_string($book['price_authors']) )
