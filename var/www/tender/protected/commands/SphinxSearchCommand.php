@@ -328,7 +328,7 @@ function sort_by($a, $b)
 	$cmpWH = $a['weight'] > $b['weight'];
 	$cmpPH = $a['publi'] && $b['publi'] && in_array($a['publi'],$arSrtPubli) && !in_array($b['publi'],$arSrtPubli);
 	$cmpCH = $a['cover'] && $b['cover'] && in_array($a['cover'],$arSrtCover) && !in_array($b['cover'],$arSrtCover);
-	$cmpLH = $a['ldate_d'] && $b['ldate_d'] && strtotime($a['ldate_d']) > strtotime($b['ldate_d']);
+	$cmpLH = $a['ldate_d'] && $b['ldate_d'] && is_string($a['ldate_d']) && is_string($b['ldate_d']) && strtotime($a['ldate_d']) > strtotime($b['ldate_d']);
 	
 	$cmpWEq = $a['weight'] == $b['weight'];
 	$cmpPEq = $a['publi'] && $b['publi'] && in_array($a['publi'],$arSrtPubli) && in_array($b['publi'],$arSrtPubli);
