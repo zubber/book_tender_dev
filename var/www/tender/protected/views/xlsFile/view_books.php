@@ -49,12 +49,12 @@ new catalogRecord($booksCatalogData);
 </div>
 <div style="float:left; width:50%; text-align: right;">
 <?php 
-if ( $model['status'] == 1 )
+if ( isset( $qmData['is_complete'] ) && isset( $xlsData['xls_id']) && $qmData['is_complete'] > 1 && $xlsData['xls_id'] )
 {
 	$this->widget('bootstrap.widgets.TbButton', array(
 			'label'=>'Скачать обработанный файл',
 			'type'=>'success',
-			'url'=>'index.php?r=xlsFile/downloadFile&id='. $model['id'],
+			'url'=>'index.php?r=xlsFile/downloadFile&id='. $xlsData['xls_id'],
 	));
 }
 ?>
