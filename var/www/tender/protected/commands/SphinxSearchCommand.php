@@ -115,8 +115,8 @@ class SphinxSearchCommand extends TenderConsoleCommand
 $this->beginProfile('searchInSphinxPrepare');
 		$s = new SphinxClient;
 		$s->setServer("127.0.0.1", 9312);
-		$s->setMaxQueryTime(300);
-		$s->SetLimits(0, 10, 10);
+		$s->setMaxQueryTime(3000);
+// 		$s->SetLimits(0, 10, 10);
 		$s->setMatchMode(SPH_MATCH_EXTENDED);
 		$this->createSphinxQueries($book_name, $authors);
 		$s->setFieldWeights ( array( 'name' => 1, 'author' => 2 ) );
@@ -138,7 +138,7 @@ $this->endProfile('searchInSphinxQuery');
 			
 			if ( $s->GetLastWarning() ) 
 				echo "WARNING: " . $s->GetLastWarning() . "";
-			
+
 			if ($result['total_found'] > 0 )
 			{
 				$is_match = true;
@@ -231,7 +231,6 @@ $this->beginProfile('searchInSphinxAllQueries');
 			$mdb_bc = $mdb_conn->tender->books_catalog;
 			$found_flag = SEARCH_QUALITY_NOT_FOUND;
 			if ( $this->makeSphinxQueries($book_name, $authors) ) {
-				
 				foreach ( $this->_matches as $seq_id => $docinfo )
 				{
 					//контрольная проверка - есть ли найденное название в запросе
@@ -276,11 +275,9 @@ if ($this->is_debug == 1) var_dump($m_book['name']);
  					array_push( $seq_ids, (int)$seq_id );
 				}
 				
-				if ( count( $matches ) > 1)
+				if ( count( $matches ) >= 1)
 				{
 					//Сортируем по весу, издательству, переплету, дате последнего тиража
-					
-						
 					$mdb_bc = $mdb_conn->tender->books_catalog;
 					$query = array( "_seq_id" => array( '$in' => $seq_ids ) );
 					$projection = array( "name" => true, "price_authors" => true, "xml_id" => true, "_seq_id" => true, "cover" => true, "ldate_d" => true, 'publi' => 1 );
@@ -291,7 +288,7 @@ if ($this->is_debug == 1) var_dump($m_book['name']);
 							if ( $matches[$m]['_seq_id'] == $find_book['_seq_id'] )
 								$matches[$m] = array_merge( $find_book,$matches[$m]);
 // var_dump($matches);
-					usort($matches,"sort_by");usort($matches,"sort_by");usort($matches,"sort_by");
+					usort($matches,"sort_by");
 // var_dump("==========");
 // var_dump($matches);					
 					$data = array(
@@ -306,7 +303,6 @@ if ($this->is_debug == 1) var_dump($m_book['name']);
 			}
 $this->endProfile('searchInSphinxAllQueries');
 		}
-		
 		if ( !count( $matches ) ) {
 			$data = array( "search_results"	=> array( "count" => 0 ) );
 			$this->log("no matches found.");
@@ -326,8 +322,8 @@ $this->endProfile('total');
 
 function sort_by($a, $b)
 {
-	$arSrtPubli = array('8-0001');
-	$arSrtCover = array('6-0002', '6-0003', '6-0004');
+	$arSrtPubli = array('8-0001', '8-0031', 'ast-8-f89a7636-1c58-11e2-818f-5ef3fc5021a7');
+	$arSrtCover = array('6-0002', '6-0003', '6-0004', 'ast-6-a791ba8e-4f06-11e0-a01d-001a64231342', 'ast-6-a791ba90-4f06-11e0-a01d-001a64231342', 'ast-6-a791ba8c-4f06-11e0-a01d-001a64231342');
 
 	$cmpWH = $a['weight'] > $b['weight'];
 	$cmpPH = $a['publi'] && $b['publi'] && in_array($a['publi'],$arSrtPubli) && !in_array($b['publi'],$arSrtPubli);
